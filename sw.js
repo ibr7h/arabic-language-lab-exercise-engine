@@ -1,10 +1,10 @@
-const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v1-2026-09-17';
+const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v2-2026-09-17-harakat';
 const CORE = [
   './', './index.html', './manifest.webmanifest', './LICENSE.txt',
   './assets/css/tailwind.css', './assets/css/app.css',
   './assets/js/app.js', './assets/js/pwa.js',
   './assets/js/core/arabic-text.js', './assets/js/core/sound-engine.js', './assets/js/core/confetti-lite.js',
-  './assets/js/core/exercise-engine.js', './assets/js/core/platform-profile.js',
+  './assets/js/core/exercise-engine.js', './assets/js/core/platform-profile.js', './assets/js/core/harakat-renderer.js',
   './assets/icons/icon-192.png', './assets/icons/icon-512.png', './assets/icons/apple-touch-icon.png'
 ];
 
