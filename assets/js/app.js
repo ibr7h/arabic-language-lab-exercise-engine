@@ -12,6 +12,7 @@ import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.
 import { BoardState, saveBoardState, loadBoardState } from './core/board-state.js';
 import { BoardHistory } from './core/board-history.js';
 import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
+import { decorateBoardPieceElement } from './ui/board-piece-view.js';
 
 /* ====================================================================
        Sound System (Tactile Magnetic Clicks + Web Speech API for Arabic)
@@ -1071,24 +1072,6 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
           if (item.type === 'space') return;
           const el = document.createElement('div');
           const isSelected = this.selectedIds.has(item.id);
-          el.dataset.pieceId = item.id;
-          el.tabIndex = 0;
-          el.setAttribute('role', 'button');
-          el.setAttribute('aria-label', this.accessiblePieceLabel(item));
-          el.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-          el.style.touchAction = 'none';
-          if (['ios','android'].includes(boardPlatformAdapter.id)) {
-            el.style.minWidth = `${boardPlatformAdapter.minTarget}px`;
-            el.style.minHeight = `${boardPlatformAdapter.minTarget}px`;
-          }
-          const selectionClass = !isSelected ? '' : (this.selectionMode === 'word' ? ' is-selected is-word-selected' : (this.selectionMode === 'letter' ? ' is-selected is-letter-selected' : ' is-selected is-multi-selected'));
-          el.className = `free-foam-piece foam-glyph ${item.color || ''} group piece-type-${item.type}${item.exerciseId ? ' exercise-piece' : ''}${selectionClass}`;
-          el.style.left = `${item.x}px`;
-          el.style.top = `${item.y}px`;
-          const mobile = window.matchMedia?.('(max-width: 640px)').matches;
-          const baseFontSize = item.type === 'haraka' ? (mobile ? 72 : 88) : (item.type === 'ligature' ? (mobile ? 58 : 72) : (mobile ? 52 : 66));
-          el.style.fontSize = `${Math.round(baseFontSize * (Number(item.scale) || 1))}px`;
-          el.style.transform = `rotate(${Number(item.rotation)||0}deg)`;
           let pieceHtml = '';
           if (item.type === 'haraka') pieceHtml = `<span class="foam-piece-glyph free-haraka-piece-glyph pointer-events-none">${renderFreeHaraka(item.mark)}</span>`;
           else if (item.type === 'ligature') pieceHtml = `<span class="foam-piece-glyph lam-alif-ligature pointer-events-none" dir="rtl">${item.displayGlyph || item.baseGlyph || item.logicalText}</span>`;
@@ -1096,7 +1079,16 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
             const base = item.baseGlyph || this.splitGlyph(item.value).baseGlyph;
             pieceHtml = `<span class="foam-piece-glyph pointer-events-none">${base}${this.renderMarkOverlays(item)}</span>`;
           }
-          el.innerHTML = `${pieceHtml}<button data-onclick="event.stopPropagation(); boardManager.removePieceById('${item.id}')" class="piece-delete-btn" title="حذف القطعة">✕</button>`;
+          decorateBoardPieceElement(el, {
+            item,
+            selected: isSelected,
+            selectionMode: this.selectionMode,
+            mobile: Boolean(window.matchMedia?.('(max-width: 640px)').matches),
+            minTouchTarget: ['ios','android'].includes(boardPlatformAdapter.id) ? boardPlatformAdapter.minTarget : 0,
+            contentHtml: pieceHtml,
+            deleteAction: `<button data-onclick="event.stopPropagation(); boardManager.removePieceById('${item.id}')" class="piece-delete-btn" title="حذف القطعة">✕</button>`
+          });
+          el.setAttribute('aria-label', this.accessiblePieceLabel(item));
 
           el.addEventListener('keydown', (e) => {
             const action = boardPlatformAdapter.actionForKey(e.key);
