@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { PLATFORM_PROFILES } from '../assets/js/core/platform-profile.js';
+import { createPlatformAdapter } from '../assets/js/core/platform-adapter.js';
+const ios=createPlatformAdapter(PLATFORM_PROFILES.ios);
+const android=createPlatformAdapter(PLATFORM_PROFILES.android);
+const tv=createPlatformAdapter(PLATFORM_PROFILES.webos);
+assert.equal(ios.minTarget,44); assert.equal(android.minTarget,44);
+assert.deepEqual(tv.actionForKey('ArrowRight'),{type:'move',dx:18,dy:0});
+assert.equal(tv.actionForKey('Enter').type,'activate');
+assert.equal(tv.actionForKey('Delete').type,'delete');
+assert.equal(createPlatformAdapter(PLATFORM_PROFILES.desktop).actionForKey('ArrowUp').dy,-12);
+console.log('Platform adapter tests: OK');
