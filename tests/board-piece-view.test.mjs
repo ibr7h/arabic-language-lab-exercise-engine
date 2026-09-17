@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import { decorateBoardPieceElement } from '../assets/js/ui/board-piece-view.js';
+const attrs={};
+const el={dataset:{},style:{},setAttribute(k,v){attrs[k]=v;}};
+decorateBoardPieceElement(el,{item:{id:'h1',type:'haraka',color:'glyph-haraka',x:10,y:20,scale:1.5},selected:true,selectionMode:'haraka',mobile:true,minTouchTarget:44,contentHtml:'X'});
+assert.equal(el.dataset.pieceId,'h1');
+assert.equal(el.tabIndex,0);
+assert.equal(attrs.role,'button');
+assert.equal(attrs['aria-pressed'],'true');
+assert.equal(el.style.minWidth,'44px');
+assert.equal(el.style.fontSize,'108px');
+assert.ok(el.className.includes('piece-type-haraka'));
+assert.ok(el.className.includes('is-selected'));
+assert.equal(el.innerHTML,'X');
+console.log('Board piece view tests: OK');
