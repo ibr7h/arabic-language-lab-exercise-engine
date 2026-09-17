@@ -34,6 +34,9 @@ jobs:
           node --check assets/js/core/arabic-identity.js
           node --check assets/js/core/ligature-engine.js
           node --check assets/js/core/board-piece.js
+          node --check assets/js/core/board-state.js
+          node --check assets/js/core/board-history.js
+          node --check assets/js/core/board-commands.js
           node --check assets/js/core/exercise-engine.js
           node --check assets/js/core/platform-profile.js
           node --check assets/js/core/sound-engine.js
@@ -46,6 +49,9 @@ jobs:
           node tests/arabic-identity.test.mjs
           node tests/ligature-engine.test.mjs
           node tests/board-piece-model.test.mjs
+          node tests/board-state.test.mjs
+          node tests/board-history.test.mjs
+          node tests/board-commands.test.mjs
           node tests/board-v3.test.mjs
           node tests/board-v4.test.mjs
           node tests/board-v41.test.mjs
