@@ -45,8 +45,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ verified · 🔴 block
 
 ## Phase 5 — Verification and release
 
-- ⬜ T26 — Browser E2E tests.
-- ⬜ T27 — Full regression suite.
+- ✅ T26 — Browser E2E tests cover lam–alif, free haraka, resize, keyboard movement and phrase spaces.
+- ✅ T27 — Full regression suite: v3/v4/v4.1 plus new Arabic/board/exercise/platform tests pass together.
 - 🟡 T28 — PWA/cache update strategy. Network-first code updates + Service Worker update/reload strategy implemented and unit-tested; final CI pending.
-- ⬜ T29 — Synchronize README/ARCHITECTURE/CHANGELOG/VERSION.
-- ⬜ T30 — Final comparison against the baseline branch.
+- ✅ T29 — README/ARCHITECTURE/CHANGELOG/VERSION synchronized for Refactor v5.
+- ✅ T30 — Final comparison against baseline completed; baseline remains `6f1b2abcf72e6828df84ffdaa84440059fed75bd` and `main` is ahead with no commits behind.
