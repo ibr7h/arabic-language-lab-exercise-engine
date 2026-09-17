@@ -4,6 +4,7 @@ import { confetti } from './core/confetti-lite.js';
 import { WordExerciseEngine } from './core/exercise-engine.js';
 import { PhraseExerciseEngine } from './core/phrase-exercise-engine.js';
 import { detectPlatformProfile } from './core/platform-profile.js';
+import { createPlatformAdapter } from './core/platform-adapter.js';
 import { BOARD_CAPABILITIES, pieceCan, createHarakaPiece as createCanonicalHarakaPiece, createSpacePiece as createCanonicalSpacePiece, createLigaturePiece as createCanonicalLigaturePiece, fromLegacyLetterPiece } from './core/board-piece.js';
 import { ArabicIdentity } from './core/arabic-identity.js';
 import { createLamAlifLigature, mergeLamAlifUnits } from './core/ligature-engine.js';
@@ -69,6 +70,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
     // ترتيب تدريس الحروف في كتاب لغتي للصف الأول: الوحدات 1–5.
     const LETTER_ORDER_LUGHATI = ['م','ب','ل','د','ن','ر','ص','ف','س','ق','ت','ح','ا','ط','ز','و','ج','ش','ض','ع','ك','خ','ي','ذ','ه','ث','غ','ظ'];
     const PRIMARY_HARAKAT = new Set(['َ','ُ','ِ','ْ','ً','ٌ','ٍ']);
+    const boardPlatformAdapter = createPlatformAdapter(detectPlatformProfile());
 
     /* ====================================================================
        Magnetic Board Manager — multi-word, selection, contextual harakat
@@ -321,6 +323,15 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
         if (idx < 0) return `${item.baseGlyph || ''}${marks.join('')}`;
         chars[idx] = chars[idx] + marks.join('');
         return chars.join('');
+      },
+
+      accessiblePieceLabel(item) {
+        if (!item) return 'قطعة';
+        if (item.type === 'haraka') return `حركة ${item.label || item.mark || ''}، قابلة للتحريك والتكبير`;
+        if (item.type === 'ligature') return `وصلة لام ألف ${item.logicalText || ''}`;
+        if (item.type === 'letter') return `حرف ${item.logicalChar || ArabicText.base(item.value) || ''}`;
+        if (item.type === 'space') return 'مسافة';
+        return 'قطعة سبورة';
       },
 
       getMarkAnchor(item) {
@@ -1048,6 +1059,15 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
           const el = document.createElement('div');
           const isSelected = this.selectedIds.has(item.id);
           el.dataset.pieceId = item.id;
+          el.tabIndex = 0;
+          el.setAttribute('role', 'button');
+          el.setAttribute('aria-label', this.accessiblePieceLabel(item));
+          el.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+          el.style.touchAction = 'none';
+          if (['ios','android'].includes(boardPlatformAdapter.id)) {
+            el.style.minWidth = `${boardPlatformAdapter.minTarget}px`;
+            el.style.minHeight = `${boardPlatformAdapter.minTarget}px`;
+          }
           const selectionClass = !isSelected ? '' : (this.selectionMode === 'word' ? ' is-selected is-word-selected' : (this.selectionMode === 'letter' ? ' is-selected is-letter-selected' : ' is-selected is-multi-selected'));
           el.className = `free-foam-piece foam-glyph ${item.color || ''} group piece-type-${item.type}${item.exerciseId ? ' exercise-piece' : ''}${selectionClass}`;
           el.style.left = `${item.x}px`;
@@ -1064,6 +1084,27 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
             pieceHtml = `<span class="foam-piece-glyph pointer-events-none">${base}${this.renderMarkOverlays(item)}</span>`;
           }
           el.innerHTML = `${pieceHtml}<button data-onclick="event.stopPropagation(); boardManager.removePieceById('${item.id}')" class="piece-delete-btn" title="حذف القطعة">✕</button>`;
+
+          el.addEventListener('keydown', (e) => {
+            const action = boardPlatformAdapter.actionForKey(e.key);
+            if (!action) return;
+            e.preventDefault();
+            if (action.type === 'move' && pieceCan(item, BOARD_CAPABILITIES.MOVABLE)) {
+              this.checkpoint('KEYBOARD_MOVE');
+              const rect = container.getBoundingClientRect();
+              item.x = Math.max(4, Math.min((item.x || 0) + action.dx, Math.max(4, rect.width - 52)));
+              item.y = Math.max(4, Math.min((item.y || 0) + action.dy, Math.max(4, rect.height - 52)));
+              this.renderBoard();
+              requestAnimationFrame(() => container.querySelector(`[data-piece-id="${CSS.escape(item.id)}"]`)?.focus());
+              return;
+            }
+            if (action.type === 'delete') { this.removePieceById(item.id); return; }
+            if (action.type === 'activate') {
+              this.selectItemForInteraction(item, { forceLetter: item.type === 'letter' && Boolean(item.wordId) });
+              this.renderBoard();
+              requestAnimationFrame(() => container.querySelector(`[data-piece-id="${CSS.escape(item.id)}"]`)?.focus());
+            }
+          });
 
           el.addEventListener('pointerdown', (e) => {
             if (e.target.closest('button')) return;
@@ -1140,7 +1181,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
        ==================================================================== */
     const exerciseCore = new WordExerciseEngine(ArabicText);
     const phraseExerciseCore = new PhraseExerciseEngine(ArabicText);
-    const platformProfile = detectPlatformProfile();
+    const platformProfile = boardPlatformAdapter.profile;
 
     const exerciseBoard = {
       mode: 'free',
@@ -1153,7 +1194,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
       init() {
         document.body.dataset.platform = this.platform.id;
         const badge = document.getElementById('platformProfileBadge');
-        if (badge) badge.textContent = `${this.platform.label} • ${this.platform.notes}`;
+        if (badge) badge.textContent = `${this.platform.label} • ${boardPlatformAdapter.describe()}`;
 
         // Preserve a restored board; the baseline branch remains available for comparison.
         boardManager.setSelection([], 'none', null);
