@@ -679,6 +679,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
       },
 
       addFreeHaraka(sym, name) {
+        this.checkpoint('ADD_FREE_HARAKA');
         const canvas = document.getElementById('boardCanvas');
         const rect = canvas ? canvas.getBoundingClientRect() : { width: 400, height: 320 };
         const offset = this.items.filter(i => i.type === 'haraka').length * 18;
@@ -707,6 +708,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
           app.showToast('اختاري حرفًا أولًا أو فعّلي «حركة حرة»');
           return;
         }
+        this.checkpoint('SET_HARAKA');
         target.marks = Array.isArray(target.marks) ? [...target.marks] : [];
         if (sym === 'ّ') {
           if (target.marks.includes('ّ')) target.marks = target.marks.filter(m => m !== 'ّ');
@@ -726,6 +728,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
         if (!markPiece) { app.showToast('حددي حركة حرة أولًا'); return; }
         const letters = this.items.filter(i => i.type === 'letter');
         if (!letters.length) { app.showToast('لا يوجد حرف لربط الحركة به'); return; }
+        this.checkpoint('ATTACH_HARAKA');
         let target = letters[0], best = Infinity;
         for (const letter of letters) {
           const d = Math.hypot((letter.x||0)-(markPiece.x||0), (letter.y||0)-(markPiece.y||0));
@@ -748,6 +751,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
       detachSelectedHaraka() {
         const target = this.getHarakaTarget();
         if (!target || !target.marks?.length) { app.showToast('حددي حرفًا عليه حركة أولًا'); return; }
+        this.checkpoint('DETACH_HARAKA');
         const mark = target.marks[target.marks.length - 1];
         target.marks = target.marks.slice(0, -1);
         target.value = this.composePieceValue(target);
@@ -762,6 +766,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
       clearHaraka() {
         const target = this.getHarakaTarget();
         if (!target) return;
+        this.checkpoint('CLEAR_HARAKA');
         target.marks = [];
         target.value = this.composePieceValue(target);
         SoundEngine.playSnap();
@@ -792,6 +797,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
       },
 
       placeCurrentLetterRow() {
+        this.checkpoint('ADD_LETTER_FORMS');
         SoundEngine.playVictory();
         const lData = this.getLetterData(this.activeLetterChar) || ALL_ARABIC_LETTERS_DATA[0];
         const shapes = [
@@ -891,6 +897,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
           app.showToast('لم أتعرف على حروف عربية في الكلمة');
           return;
         }
+        this.checkpoint(clear ? 'LOAD_COMPLETED_WORD' : 'ADD_COMPLETED_WORD');
         if (clear) {
           this.items = [];
           this.setSelection([], 'none', null);
@@ -936,6 +943,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
 
       autoAlignRow() {
         if (!this.items.length) return;
+        this.checkpoint('AUTO_ALIGN');
         SoundEngine.playSnap();
         const canvas = document.getElementById('boardCanvas');
         const rect = canvas.getBoundingClientRect();
@@ -965,6 +973,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
 
       scatterPieces() {
         if (!this.items.length) return;
+        this.checkpoint('SCATTER_PIECES');
         SoundEngine.playSnap();
         const canvas = document.getElementById('boardCanvas');
         const rect = canvas.getBoundingClientRect();
@@ -983,16 +992,20 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
 
       getWordGroups() {
         const groups = new Map();
-        this.items.filter(i => i.type === 'letter' || i.type === 'space').forEach(item => {
+        this.items.filter(i => ['letter','ligature','space'].includes(i.type)).forEach(item => {
           const key = item.wordId || '__free__';
           if (!groups.has(key)) groups.set(key, []);
           groups.get(key).push(item);
         });
         return [...groups.entries()].map(([id, items]) => {
-          const letters = items.filter(i => i.type === 'letter');
-          const y = letters.length ? Math.min(...letters.map(i => i.y)) : 0;
-          const text = [...items].sort((a, b) => b.x - a.x).map(i => i.type === 'letter' ? this.composePieceValue(i) : ' ').join('').replace(/ـ+/g, '').replace(/\s+/g, ' ').trim();
-          return { id, items, y, text, label: letters.find(i => i.wordLabel)?.wordLabel || text };
+          const visible = items.filter(i => i.type !== 'space');
+          const y = visible.length ? Math.min(...visible.map(i => i.y)) : 0;
+          const text = [...items].sort((a, b) => b.x - a.x).map(i => {
+            if (i.type === 'letter') return this.composePieceValue(i);
+            if (i.type === 'ligature') return i.logicalText || i.value || '';
+            return ' ';
+          }).join('').replace(/ـ+/g, '').replace(/\s+/g, ' ').trim();
+          return { id, items, y, text, label: visible.find(i => i.wordLabel)?.wordLabel || text };
         }).filter(g => g.text).sort((a, b) => a.y - b.y);
       },
 
