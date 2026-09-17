@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import { ArabicIdentity } from '../assets/js/core/arabic-identity.js';
+assert.equal(ArabicIdentity.canonicalLetter('ة'),'ة');
+assert.equal(ArabicIdentity.canonicalLetter('ى'),'ى');
+assert.notEqual(ArabicIdentity.canonicalLetter('ة'),ArabicIdentity.canonicalLetter('ه'));
+assert.notEqual(ArabicIdentity.canonicalLetter('ى'),ArabicIdentity.canonicalLetter('ي'));
+assert.equal(ArabicIdentity.visualLookupKey('ة'),'ه');
+assert.equal(ArabicIdentity.visualLookupKey('ى'),'ي');
+for (const a of ['ا','أ','إ','آ']) assert.equal(ArabicIdentity.canonicalLetter(a),a);
+console.log('Arabic identity tests: OK');
