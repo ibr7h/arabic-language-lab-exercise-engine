@@ -1,51 +1,71 @@
 # CHANGELOG
 
+## Refactor v5 — 2026-09-18
+
+### Arabic domain
+- فصل الهوية اللغوية عن lookup العرض؛ الحفاظ على `ة` و`ى`.
+- إضافة محرك لام–ألف لـ `لا، لأ، لإ، لآ`.
+- إضافة Arabic regression matrix للهمزات والتاء المربوطة والألف المقصورة والشدة والتنوين والمد.
+
+### Harakat
+- استبدال الرسومات اليدوية بـUnified Unicode Haraka Renderer.
+- تكبير الحركات وتوحيد مقياسها.
+- تنوين الضم يظهر كضمتين متقاربتين.
+- إضافة Free Haraka pieces قابلة للسحب والتكبير.
+- إضافة attach/detach للحركة.
+- إزالة مسار SVG → MutationObserver القديم.
+
+### Board
+- نموذج موحد للقطع: letter / haraka / ligature / space.
+- capability-based selection/movement/resize/delete.
+- BoardState مستقل عن DOM.
+- Board Commands وUndo/Redo history.
+- حفظ واستعادة حالة السبورة محليًا.
+- إدخال الوصلات في معاينة ونطق الكلمات.
+- استخراج Board Piece View إلى UI module.
+
+### Exercises
+- تكيف Build Word مع النموذج الجديد.
+- إضافة PhraseExerciseEngine مع مسافات صريحة وخانات ثابتة.
+
+### Platforms & accessibility
+- PlatformAdapter لـiOS/Android/webOS/desktop.
+- safe-area على iOS و44px touch targets لـiOS/Android.
+- D-pad/keyboard movement وfocus مرئي لـwebOS.
+- ARIA labels/pressed state للقطع.
+
+### PWA & QA
+- network-first للشيفرة والأنماط لتقليل stale cache.
+- Service Worker update/controller reload flow.
+- إضافة unit/regression tests جديدة واختبار Chromium E2E.
+- بقاء اختبار Safari/iPhone الفعلي كخطوة release يدوية.
+
+## v4.1 — 2026-09-16
+- تحديد حرف واحد داخل كلمة مكتملة بالضغطة الثانية أو الضغط المطوّل.
+- فك الكلمات وإعادة تجميع الحروف.
+- تمييز selection modes بصريًا.
+
+## v4 Secure — 2026-09-16
+- CSP مع `script-src 'self'`.
+- إزالة Google Fonts network dependency.
+- dispatcher مسموح دون `eval` أو `new Function`.
+- Service Worker same-origin.
+- مراجعة أمنية.
+
+## v4 — 2026-09-16
+- تحسين mobile interactions وVisualViewport/ResizeObserver.
+- دعم `ا، أ، إ، آ`.
+- تكبير الحركات والتحكم بحجم الحروف/المجموعات.
+- تحسين contextual forms.
+
 ## v3 — 2026-09-16
-- تحسين سلاسة قلم السبورة باستخدام Pointer Events وcoalesced events ومنحنيات quadratic ودقة Retina.
-- إضافة التحكم في سماكة القلم وزر تراجع.
-- إضافة ترتيبين للحروف: هجائي، وترتيب كتاب لغتي للصف الأول.
-- دعم كلمات مكتملة متعددة على السبورة مع كلمات جاهزة وحقل لإضافة أي كلمة.
-- إضافة تحديد الكل، إلغاء التحديد، حذف المحدد، وتحريك مجموعة محددة دفعة واحدة.
-- فصل الحركة عن الحرف بصريًا ومنطقيًا؛ يمكن استبدال الحركة وإزالتها، مع دعم الشدة مع حركة.
-- تحسين موضع الحركات حسب شكل الحرف: أول/وسط/آخر/منفصل.
-- تحديث cache إلى v3.
+- Pointer Events وقلم السبورة.
+- ترتيب كتاب لغتي/هجائي.
+- كلمات مكتملة متعددة، تحديد الكل، النثر، والحركات القابلة للاستبدال.
 
-# Changelog
-
-## v2 Phase 0–2 — 2026-09-16
+## v2 — 2026-09-16
 - Arabic grapheme parser.
-- Correct sukun/madd dynamic segmentation.
-- Event-driven speech sequencing.
-- Canvas resize preservation and CSS guide lines.
-- Zoom accessibility correction and live toast status.
-- Local Tailwind build.
-- Native Web Audio feedback.
-- Local lightweight confetti.
-- PWA manifest, service worker, install button, and icons.
-- Automated Arabic engine smoke tests.
-
-## v4 — Mobile interaction, Arabic form fidelity, board editing
-- Deselect board content by tapping empty board space.
-- Tapping any letter in a completed board word selects the whole word as a group while keeping the tapped letter active for harakat editing.
-- Added board letter/group size controls (65%–180%, reset to 100%).
-- Enlarged magnetic-board diacritics and adjusted their anchors.
-- Added explicit support for alif variants: ا، أ، إ، آ, preserving the exact form in completed words.
-- Bear Analyzer now renders each phonetic/letter segment using the contextual form the letter has in the complete word.
-- Reworked whiteboard sizing around the visible container, VisualViewport/ResizeObserver updates, and touch fallback for older mobile browsers.
-- Added visible copyright notice and proprietary LICENSE.txt.
-- Bumped offline cache to v4.
-
-
-## v4 Secure hardening
-- CSP: `script-src 'self'`.
-- Removed Google Fonts network dependency.
-- Removed inline event handlers; added allowlisted dispatcher without eval.
-- Service Worker restricted to same-origin caching.
-- Added security review.
-
-## v4.1 — Single-letter manipulation
-- First tap selects a whole completed word; second tap selects the touched letter only.
-- Long-press on touch devices directly selects one letter.
-- Added detach/regroup controls for word groups.
-- Added distinct selection outlines for word, letter, and multi-selection modes.
-- Bumped offline cache to v4.1.
+- قواعد السكون والمد.
+- sequencing للصوت.
+- local Tailwind/Web Audio/confetti.
+- PWA وsmoke tests.
