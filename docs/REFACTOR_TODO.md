@@ -36,8 +36,8 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ verified · 🔴 block
 
 ## Phase 4 — Exercises and platforms
 
-- ⬜ T20 — Adapt “build word” to the new board model.
-- ⬜ T21 — Separate WordExercise and PhraseExercise with explicit spaces.
+- 🟡 T20 — Adapt “build word” to the new board model. Canonical piece flow integrated; CI pending.
+- 🟡 T21 — Separate WordExercise and PhraseExercise with explicit spaces. Implemented with fixed space slots; CI pending.
 - ⬜ T22 — iPhone/Safari touch verification.
 - ⬜ T23 — Android adapter.
 - ⬜ T24 — webOS focus/D-pad adapter.
