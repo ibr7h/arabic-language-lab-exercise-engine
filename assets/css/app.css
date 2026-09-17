@@ -772,3 +772,10 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
   .foam-mark-overlay { width:.94em !important; height:.72em !important; }
   .free-foam-piece.piece-type-haraka { min-width:.78em; }
 }
+
+.exercise-slot.fixed-space {
+  border-style: dashed; border-color:#cbd5e1; background:#f8fafc; color:#64748b;
+  display:grid; place-items:center; min-width:2rem;
+}
+.exercise-slot.fixed-space strong { font-size:1.1rem; line-height:1; }
+#exerciseKind { border:1px solid #cbd5e1; border-radius:.65rem; background:#fff; padding:.38rem .55rem; font-weight:800; color:#334155; }
