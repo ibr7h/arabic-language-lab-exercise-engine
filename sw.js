@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v3-2026-09-17-harakat-size';
+const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v4-2026-09-17-dammatan-tight';
 const CORE = [
   './', './index.html', './manifest.webmanifest', './LICENSE.txt',
   './assets/css/tailwind.css', './assets/css/app.css',
