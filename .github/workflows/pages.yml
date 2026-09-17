@@ -40,6 +40,7 @@ jobs:
           node --check assets/js/core/exercise-engine.js
           node --check assets/js/core/phrase-exercise-engine.js
           node --check assets/js/core/platform-profile.js
+          node --check assets/js/core/platform-adapter.js
           node --check assets/js/core/sound-engine.js
           node --check assets/js/core/harakat-renderer.js
           node --check sw.js
@@ -58,6 +59,7 @@ jobs:
           node tests/board-v41.test.mjs
           node tests/exercise-engine.test.mjs
           node tests/phrase-exercise-engine.test.mjs
+          node tests/platform-adapter.test.mjs
           node tests/exercise-board-piece.test.mjs
           node tests/harakat-renderer.test.mjs
 
