@@ -67,8 +67,37 @@ jobs:
           node tests/harakat-renderer.test.mjs
           node tests/pwa-strategy.test.mjs
 
-  deploy:
+
+  e2e:
     needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save @playwright/test
+          npx playwright install --with-deps chromium
+
+      - name: Run browser E2E
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/arabic-lab-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          for i in {1..20}; do
+            curl -fsS http://127.0.0.1:8080/ >/dev/null && break
+            sleep 1
+          done
+          npx playwright test tests/e2e-board.spec.mjs --reporter=line --workers=1
+
+  deploy:
+    needs: [test, e2e]
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
