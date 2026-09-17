@@ -2,11 +2,6 @@
   const installBtn = document.getElementById('pwaInstallBtn');
   let deferredPrompt = null;
 
-  // Replace the three legacy hand-drawn top marks with native Arabic glyphs.
-  // This runs independently from app.js so the exercise/board state logic is untouched.
-  import('./core/harakat-renderer.js')
-    .then(({ installNativeHarakatRenderer }) => installNativeHarakatRenderer())
-    .catch(err => console.warn('Harakat renderer failed to load:', err));
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
