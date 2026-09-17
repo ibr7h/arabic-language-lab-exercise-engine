@@ -43,6 +43,7 @@ jobs:
           node --check assets/js/core/platform-adapter.js
           node --check assets/js/core/sound-engine.js
           node --check assets/js/core/harakat-renderer.js
+          node --check assets/js/ui/board-piece-view.js
           node --check sw.js
 
       - name: Run regression and exercise tests
@@ -52,6 +53,7 @@ jobs:
           node tests/arabic-regression-matrix.test.mjs
           node tests/ligature-engine.test.mjs
           node tests/board-piece-model.test.mjs
+          node tests/board-piece-view.test.mjs
           node tests/board-state.test.mjs
           node tests/board-history.test.mjs
           node tests/board-commands.test.mjs
