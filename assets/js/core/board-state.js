@@ -4,8 +4,10 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 export class BoardState {
-  constructor(items = []) { this.items = clone(Array.isArray(items) ? items : []); }
-  replace(items = []) { this.items = clone(Array.isArray(items) ? items : []); return this.items; }
+  constructor(items = []) { this.items = Array.isArray(items) ? items : []; }
+  // Preserve live item references for compatibility with board controllers.
+  // Snapshots/persistence still clone, so undo and storage remain isolated.
+  replace(items = []) { this.items = Array.isArray(items) ? items : []; return this.items; }
   snapshot() { return clone(this.items); }
   restore(snapshot = []) { return this.replace(snapshot); }
   find(id) { return this.items.find(item => item.id === id) || null; }
