@@ -26,7 +26,7 @@ assert.equal(bm.normalizeLetterKey(bm.getOrderedLetters()[27].char), 'ظ');
 const salat = bm.wordToPiecesData('الصَّلَاةَ');
 assert.ok(salat.length >= 5);
 assert.ok(!salat.some(p => p.glyph.includes('أ')), 'plain alif must not turn into hamza');
-assert.ok(salat.some(p => p.type === 'ligature' && p.logicalText.includes('لا')), 'lam + plain alif should become a real lam-alif ligature without changing identity');
+assert.ok(salat.some(p => p.type === 'ligature' && p.components?.length === 2 && p.components[1].includes('ا')), 'lam + plain alif should become a real lam-alif ligature without changing identity');
 
 const p = bm.createLetterPiece('بَـ', 'glyph-purple', 'أول الكلمة', 10, 10);
 bm.items = [p];
