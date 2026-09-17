@@ -38,10 +38,10 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ verified · 🔴 block
 
 - 🟡 T20 — Adapt “build word” to the new board model. Canonical piece flow integrated; CI pending.
 - 🟡 T21 — Separate WordExercise and PhraseExercise with explicit spaces. Implemented with fixed space slots; CI pending.
-- ⬜ T22 — iPhone/Safari touch verification.
-- ⬜ T23 — Android adapter.
-- ⬜ T24 — webOS focus/D-pad adapter.
-- ⬜ T25 — Accessibility: keyboard/focus/ARIA.
+- 🟡 T22 — iPhone/Safari touch verification. iOS adapter, 44px targets and safe areas implemented; automated verification pending. Physical-device check remains manual.
+- 🟡 T23 — Android adapter. Shared touch adapter and 44px targets implemented; CI pending.
+- 🟡 T24 — webOS focus/D-pad adapter. Arrow/D-pad + Enter/Delete keyboard mapping and focus styling implemented; CI pending.
+- 🟡 T25 — Accessibility: keyboard/focus/ARIA. Board pieces now expose role, label, pressed state and keyboard movement; CI pending.
 
 ## Phase 5 — Verification and release
 
