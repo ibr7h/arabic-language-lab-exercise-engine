@@ -18,7 +18,9 @@ assert.ok(nativeTopMarkSvg('ُ').includes('ـُ'), 'damma should use the native 
 assert.ok(nativeTopMarkSvg('ّ').includes('ـّ'), 'shadda should use the native shadda glyph');
 const dammatan = nativeTopMarkSvg('ٌ');
 assert.equal((dammatan.match(/ـُ/g) || []).length, 2, 'dammatan should render two adjacent native dammas');
-assert.ok(dammatan.includes('x="20"') && dammatan.includes('x="48"'), 'the two dammas should be horizontally separated');
+assert.ok(dammatan.includes('x="23"') && dammatan.includes('x="35"'), 'the two dammas should be tightly spaced');
+assert.ok(dammatan.includes('font-size="58"'), 'dammatan should use the enlarged fatha-scale glyph size');
+assert.ok(dammatan.includes('viewBox="0 0 58 30"'), 'dammatan should use the compact display box');
 
 assert.equal(markFromLegacyPath('M0 0'), null);
 assert.equal(nativeTopMarkSvg('َ'), '');
