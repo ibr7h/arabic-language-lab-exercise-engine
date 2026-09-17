@@ -135,7 +135,11 @@
 
         <div id="exerciseBuildControls" class="exercise-build-controls hidden">
           <div class="exercise-input-group">
-            <label for="exerciseTargetWord">الكلمة الهدف</label>
+            <label for="exerciseTargetWord">النص الهدف</label>
+            <select id="exerciseKind" aria-label="نوع النشاط">
+              <option value="word">كلمة</option>
+              <option value="phrase">عبارة</option>
+            </select>
             <input id="exerciseTargetWord" type="text" value="كِتَابٌ" inputmode="text" autocomplete="off" data-onkeydown="if(event.key==='Enter'){exerciseBoard.startBuildWord()}" />
             <button type="button" class="exercise-primary-btn" data-onclick="exerciseBoard.startBuildWord()">🎲 نثر حروف الكلمة</button>
           </div>
@@ -144,6 +148,7 @@
             <button data-onclick="exerciseBoard.usePreset('صُنْدُوقٌ')">صُنْدُوقٌ</button>
             <button data-onclick="exerciseBoard.usePreset('مَدْرَسَةٌ')">مَدْرَسَةٌ</button>
             <button data-onclick="exerciseBoard.usePreset('سَيَّارَةٌ')">سَيَّارَةٌ</button>
+            <button data-onclick="exerciseBoard.usePreset('ذَهَبَ مُحَمَّدٌ')">ذَهَبَ مُحَمَّدٌ</button>
           </div>
           <div class="exercise-options">
             <label><input id="exerciseIncludeMarks" type="checkbox" checked> الحركات مع الحروف</label>
