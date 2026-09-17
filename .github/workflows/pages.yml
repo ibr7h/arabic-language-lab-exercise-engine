@@ -31,6 +31,8 @@ jobs:
           node --check assets/js/app.js
           node --check assets/js/pwa.js
           node --check assets/js/core/arabic-text.js
+          node --check assets/js/core/arabic-identity.js
+          node --check assets/js/core/ligature-engine.js
           node --check assets/js/core/board-piece.js
           node --check assets/js/core/exercise-engine.js
           node --check assets/js/core/platform-profile.js
@@ -41,6 +43,8 @@ jobs:
       - name: Run regression and exercise tests
         run: |
           node tests/arabic-engine.test.mjs
+          node tests/arabic-identity.test.mjs
+          node tests/ligature-engine.test.mjs
           node tests/board-piece-model.test.mjs
           node tests/board-v3.test.mjs
           node tests/board-v4.test.mjs
