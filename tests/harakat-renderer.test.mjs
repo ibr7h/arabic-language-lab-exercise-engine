@@ -10,10 +10,15 @@ const legacyCases = [
 for (const [path, mark] of legacyCases) {
   assert.equal(markFromLegacyPath(path), mark);
   const svg = nativeTopMarkSvg(mark);
-  assert.ok(svg.includes(`ـ${mark}`), `native carrier should contain ${mark}`);
   assert.ok(svg.includes('<text '), 'native mark must be rendered as font text');
   assert.ok(!svg.includes('<path '), 'native mark must not use an approximated SVG path');
 }
+
+assert.ok(nativeTopMarkSvg('ُ').includes('ـُ'), 'damma should use the native damma glyph');
+assert.ok(nativeTopMarkSvg('ّ').includes('ـّ'), 'shadda should use the native shadda glyph');
+const dammatan = nativeTopMarkSvg('ٌ');
+assert.equal((dammatan.match(/ـُ/g) || []).length, 2, 'dammatan should render two adjacent native dammas');
+assert.ok(dammatan.includes('x="20"') && dammatan.includes('x="48"'), 'the two dammas should be horizontally separated');
 
 assert.equal(markFromLegacyPath('M0 0'), null);
 assert.equal(nativeTopMarkSvg('َ'), '');
