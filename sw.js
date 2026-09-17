@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v8-2026-09-18-platforms';
+const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v9-2026-09-18-update-strategy';
 const CORE = [
   './', './index.html', './manifest.webmanifest', './LICENSE.txt',
   './assets/css/tailwind.css', './assets/css/app.css',
@@ -43,6 +43,24 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  const networkFirst = ['script', 'style', 'worker'].includes(request.destination)
+    || /\.(?:json|webmanifest)$/i.test(url.pathname);
+
+  if (networkFirst) {
+    event.respondWith(
+      fetch(request)
+        .then(async response => {
+          if (response.ok && response.type === 'basic') {
+            const cache = await caches.open(CACHE_VERSION);
+            await cache.put(request, response.clone());
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
     );
     return;
   }
