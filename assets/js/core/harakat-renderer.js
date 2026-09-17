@@ -1,7 +1,7 @@
 // Native Arabic harakat compatibility renderer.
 // The board historically approximated some marks with hand-drawn SVG paths.
 // For damma, shadda, and dammatan we instead let the browser's Arabic font
-// shape the real Unicode mark on a tatweel carrier, while clipping the carrier.
+// shape real Unicode marks on tatweel carriers, while clipping the carriers.
 
 const LEGACY_TOP_MARK_PATHS = new Map([
   ['M8 17 C12 7 17 22 21 12 C25 4 30 18 34 9', 'ّ'],
@@ -12,25 +12,34 @@ const LEGACY_TOP_MARK_PATHS = new Map([
 const NATIVE_MARK_BOX = {
   'ُ': { width: 0.96, height: 0.70 },
   'ّ': { width: 1.00, height: 0.72 },
-  'ٌ': { width: 1.12, height: 0.76 }
+  'ٌ': { width: 1.28, height: 0.76 }
 };
+
+const ARABIC_MARK_FONT = "'Geeza Pro','SF Arabic','Noto Naskh Arabic','Traditional Arabic',serif";
 
 export function markFromLegacyPath(pathData) {
   const normalized = String(pathData || '').trim().replace(/\s+/g, ' ');
   return LEGACY_TOP_MARK_PATHS.get(normalized) || null;
 }
 
-export function nativeTopMarkSvg(mark) {
-  if (!['ُ', 'ّ', 'ٌ'].includes(mark)) return '';
-
-  // The tatweel (ـ) gives the combining mark a real Arabic base for OpenType
-  // positioning. Its baseline is deliberately below the SVG viewport, so only
-  // the correctly shaped mark remains visible.
+function nativeSingleTopMarkSvg(mark) {
   const sample = `ـ${mark}`;
   const y = mark === 'ّ' ? 41 : 40;
-  const size = mark === 'ٌ' ? 45 : 46;
+  const size = 46;
+  return `<svg viewBox="0 0 50 28" aria-hidden="true" focusable="false" style="overflow:hidden" preserveAspectRatio="xMidYMid meet"><text x="25" y="${y}" text-anchor="middle" direction="rtl" font-size="${size}" font-weight="400" fill="currentColor" style="font-family:${ARABIC_MARK_FONT}">${sample}</text></svg>`;
+}
 
-  return `<svg viewBox="0 0 50 28" aria-hidden="true" focusable="false" style="overflow:hidden" preserveAspectRatio="xMidYMid meet"><text x="25" y="${y}" text-anchor="middle" direction="rtl" font-size="${size}" font-weight="400" fill="currentColor" style="font-family:'Geeza Pro','SF Arabic','Noto Naskh Arabic','Traditional Arabic',serif">${sample}</text></svg>`;
+function nativeDammatanSvg() {
+  // Educational display: tanween damm is shown as two clear dammas side-by-side.
+  // Each damma is independently shaped by the Arabic font on its own carrier.
+  const sample = 'ـُ';
+  return `<svg viewBox="0 0 68 28" aria-hidden="true" focusable="false" style="overflow:hidden" preserveAspectRatio="xMidYMid meet"><text x="20" y="40" text-anchor="middle" direction="rtl" font-size="46" font-weight="400" fill="currentColor" style="font-family:${ARABIC_MARK_FONT}">${sample}</text><text x="48" y="40" text-anchor="middle" direction="rtl" font-size="46" font-weight="400" fill="currentColor" style="font-family:${ARABIC_MARK_FONT}">${sample}</text></svg>`;
+}
+
+export function nativeTopMarkSvg(mark) {
+  if (mark === 'ٌ') return nativeDammatanSvg();
+  if (mark === 'ُ' || mark === 'ّ') return nativeSingleTopMarkSvg(mark);
+  return '';
 }
 
 function replaceLegacyTopMark(span) {
