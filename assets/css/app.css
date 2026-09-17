@@ -779,3 +779,18 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
 }
 .exercise-slot.fixed-space strong { font-size:1.1rem; line-height:1; }
 #exerciseKind { border:1px solid #cbd5e1; border-radius:.65rem; background:#fff; padding:.38rem .55rem; font-weight:800; color:#334155; }
+
+/* Platform accessibility adapters */
+body[data-platform="ios"] {
+  padding-top: env(safe-area-inset-top, 0);
+  padding-right: env(safe-area-inset-right, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-left: env(safe-area-inset-left, 0);
+}
+body[data-platform="webos"] .free-foam-piece:focus,
+body[data-platform="desktop"] .free-foam-piece:focus-visible {
+  outline: 5px solid #0284c7;
+  outline-offset: 5px;
+}
+body[data-platform="webos"] .free-foam-piece { transition: transform .12s ease, outline .12s ease; }
+body[data-platform="webos"] .free-foam-piece:focus { z-index:20; }
