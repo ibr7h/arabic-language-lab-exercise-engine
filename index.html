@@ -202,7 +202,7 @@
           <button data-onclick="boardManager.clearSelection()" class="board-selection-btn" title="إلغاء التحديد">إلغاء التحديد</button>
           <button data-onclick="boardManager.detachSelectedWord()" class="board-selection-btn word-edit" title="فك الكلمة إلى حروف مستقلة">🔓 فك الكلمة</button>
           <button data-onclick="boardManager.regroupSelection()" class="board-selection-btn word-edit" title="إعادة تجميع الحروف المحددة">🔗 تجميع</button>
-          <div class="board-scale-tools" aria-label="تكبير وتصغير الحروف المحددة">
+          <div class="board-scale-tools" aria-label="تكبير وتصغير القطع المحددة">
             <button type="button" data-onclick="boardManager.resizeSelected(-0.1)" title="تصغير الحروف المحددة">A−</button>
             <button type="button" id="boardLetterScaleValue" data-onclick="boardManager.resetSelectedSize()" title="إعادة الحجم إلى 100%">100%</button>
             <button type="button" data-onclick="boardManager.resizeSelected(0.1)" title="تكبير الحروف المحددة">A+</button>
@@ -347,8 +347,14 @@
             <!-- Red Harakat Strip (Matching the vibrant red foam marks in the photos) -->
             <div class="p-2 bg-rose-50/80 rounded-2xl border border-rose-200 mb-2">
               <div class="haraka-toolbar-head">
-                <span class="text-[10px] font-black text-rose-800">الحركات: اختاري الحرف ثم الحركة؛ اختيار حركة جديدة يستبدل السابقة.</span>
+                <span class="text-[10px] font-black text-rose-800">الحركات: مرتبطة بالحرف أو قطع حرة مستقلة قابلة للسحب والتكبير.</span>
                 <button type="button" data-onclick="boardManager.clearHaraka()" class="clear-haraka-btn">إزالة الحركة</button>
+              </div>
+              <div class="haraka-mode-tools" aria-label="طريقة إضافة الحركة">
+                <button id="harakaModeAttached" type="button" class="haraka-mode-btn active" data-onclick="boardManager.setHarakaPlacementMode('attached')">مرتبطة بالحرف</button>
+                <button id="harakaModeFree" type="button" class="haraka-mode-btn" data-onclick="boardManager.setHarakaPlacementMode('free')">حركة حرة</button>
+                <button type="button" class="haraka-mode-btn haraka-link-btn" data-onclick="boardManager.attachSelectedHaraka()">🔗 ربط بالأقرب</button>
+                <button type="button" class="haraka-mode-btn haraka-link-btn" data-onclick="boardManager.detachSelectedHaraka()">🔓 فصل من الحرف</button>
               </div>
               <div id="harakaTargetLabel" class="haraka-target-label">اختاري حرفًا لتغيير حركته</div>
               <div class="flex flex-wrap gap-2 justify-center items-center py-1" id="harakatButtonsRow">
