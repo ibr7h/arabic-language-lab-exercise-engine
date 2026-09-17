@@ -49,6 +49,7 @@ jobs:
         run: |
           node tests/arabic-engine.test.mjs
           node tests/arabic-identity.test.mjs
+          node tests/arabic-regression-matrix.test.mjs
           node tests/ligature-engine.test.mjs
           node tests/board-piece-model.test.mjs
           node tests/board-state.test.mjs
@@ -62,6 +63,7 @@ jobs:
           node tests/platform-adapter.test.mjs
           node tests/exercise-board-piece.test.mjs
           node tests/harakat-renderer.test.mjs
+          node tests/pwa-strategy.test.mjs
 
   deploy:
     needs: test
