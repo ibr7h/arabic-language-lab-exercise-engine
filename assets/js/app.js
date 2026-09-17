@@ -7,6 +7,9 @@ import { BOARD_CAPABILITIES, pieceCan, createHarakaPiece as createCanonicalHarak
 import { ArabicIdentity } from './core/arabic-identity.js';
 import { createLamAlifLigature, mergeLamAlifUnits } from './core/ligature-engine.js';
 import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.js';
+import { BoardState, saveBoardState, loadBoardState } from './core/board-state.js';
+import { BoardHistory } from './core/board-history.js';
+import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
 
 /* ====================================================================
        Sound System (Tactile Magnetic Clicks + Web Speech API for Arabic)
@@ -70,7 +73,12 @@ import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.
        Magnetic Board Manager — multi-word, selection, contextual harakat
        ==================================================================== */
     const boardManager = {
-      items: [],
+      state: new BoardState(),
+      history: new BoardHistory(80),
+      storageKey: 'arabic-language-lab.board.v1',
+      restoredFromStorage: false,
+      get items() { return this.state.items; },
+      set items(value) { this.state.replace(value); },
       activeLetterChar: 'ص',
       activePositionFilter: 'ALL',
       letterOrderMode: 'lughati',
@@ -90,7 +98,56 @@ import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.
         this.renderAlifVariantsBar();
         this.renderFoamLettersGrid();
         this.setupBoardInteraction();
-        this.loadPresetWord('صَالِحٌ');
+        this.restoredFromStorage = this.restorePersisted();
+        if (!this.restoredFromStorage) this.loadPresetWord('صَالِحٌ');
+        else this.renderBoard();
+      },
+
+      checkpoint(label = '') {
+        this.history.checkpoint(this.state.snapshot(), label);
+      },
+
+      runCommand(command, { checkpoint = true, render = true } = {}) {
+        if (checkpoint) this.checkpoint(command?.type || 'BOARD_COMMAND');
+        applyBoardCommand(this.state, command);
+        if (render) this.renderBoard();
+        return this.items;
+      },
+
+      persistBoard() {
+        if (typeof localStorage === 'undefined') return false;
+        return saveBoardState(localStorage, this.storageKey, this.state, {
+          mode: typeof exerciseBoard !== 'undefined' ? exerciseBoard.mode : 'free',
+          harakaPlacementMode: this.harakaPlacementMode
+        });
+      },
+
+      restorePersisted() {
+        if (typeof localStorage === 'undefined') return false;
+        const saved = loadBoardState(localStorage, this.storageKey);
+        if (!saved?.items?.length) return false;
+        this.state.restore(saved.items);
+        this.harakaPlacementMode = saved.meta?.harakaPlacementMode === 'free' ? 'free' : 'attached';
+        this.history.clear();
+        return true;
+      },
+
+      undo() {
+        const snapshot = this.history.undo(this.state.snapshot());
+        if (!snapshot) { app.showToast('لا توجد خطوة للتراجع'); return; }
+        this.state.restore(snapshot);
+        this.setSelection([], 'none', null);
+        this.renderBoard();
+        app.showToast('تم التراجع');
+      },
+
+      redo() {
+        const snapshot = this.history.redo(this.state.snapshot());
+        if (!snapshot) { app.showToast('لا توجد خطوة للإعادة'); return; }
+        this.state.restore(snapshot);
+        this.setSelection([], 'none', null);
+        this.renderBoard();
+        app.showToast('تمت إعادة الخطوة');
       },
 
       normalizeLetterKey(char) {
@@ -541,9 +598,13 @@ import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.
           app.showToast('حددي قطعة قابلة للتكبير أولًا');
           return;
         }
-        const step = Number(delta) || 0;
-        selected.forEach(item => {
-          item.scale = Math.max(0.65, Math.min(1.8, (Number(item.scale) || 1) + step));
+        this.checkpoint('RESIZE_PIECES');
+        applyBoardCommand(this.state, {
+          type: BOARD_COMMANDS.RESIZE_PIECES,
+          ids: selected.map(i => i.id),
+          delta: Number(delta) || 0,
+          min: 0.35,
+          max: 3
         });
         SoundEngine.playSnap();
         this.renderBoard();
@@ -552,6 +613,7 @@ import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.
       resetSelectedSize() {
         const selected = this.items.filter(i => this.selectedIds.has(i.id) && pieceCan(i, BOARD_CAPABILITIES.SCALABLE));
         if (!selected.length) return;
+        this.checkpoint('RESET_SCALE');
         selected.forEach(item => { item.scale = 1; });
         SoundEngine.playSnap();
         this.renderBoard();
@@ -559,9 +621,11 @@ import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.
 
       deleteSelected() {
         if (!this.selectedIds.size) return;
-        const removable = new Set(this.items.filter(i => this.selectedIds.has(i.id) && pieceCan(i, BOARD_CAPABILITIES.DELETABLE)).map(i => i.id));
-        const count = removable.size;
-        this.items = this.items.filter(i => !removable.has(i.id));
+        const removable = this.items.filter(i => this.selectedIds.has(i.id) && pieceCan(i, BOARD_CAPABILITIES.DELETABLE));
+        if (!removable.length) return;
+        this.checkpoint('DELETE_PIECES');
+        applyBoardCommand(this.state, { type: BOARD_COMMANDS.DELETE_PIECES, ids: removable.map(i => i.id) });
+        const count = removable.length;
         this.setSelection([], 'none', null);
         SoundEngine.playSnap();
         this.renderBoard();
@@ -577,7 +641,8 @@ import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.
         let newY = Math.max(30, rect.height * 0.42);
         if (newX < 30) newX = rect.width * 0.75;
         const piece = this.createLetterPiece(glyph, colorClass, positionName, newX, newY);
-        this.items.push(piece);
+        this.checkpoint('ADD_PIECE');
+        applyBoardCommand(this.state, { type: BOARD_COMMANDS.ADD_PIECE, piece });
         this.setSelection([piece.id], 'letter', piece.id);
         this.renderBoard();
       },
@@ -698,13 +763,17 @@ import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.
         const rect = canvas ? canvas.getBoundingClientRect() : { width: 400, height: 320 };
         const item = createCanonicalSpacePiece({ x: rect.width * 0.5, y: rect.height * 0.45, width: 1 });
         item.value = ' '; item.color = ''; item.wordId = null;
-        this.items.push(item);
+        this.checkpoint('ADD_SPACE');
+        applyBoardCommand(this.state, { type: BOARD_COMMANDS.ADD_PIECE, piece: item });
         this.renderBoard();
       },
 
       removePieceById(id) {
+        const item = this.items.find(i => i.id === id);
+        if (!item || !pieceCan(item, BOARD_CAPABILITIES.DELETABLE)) return;
+        this.checkpoint('DELETE_PIECE');
+        applyBoardCommand(this.state, { type: BOARD_COMMANDS.DELETE_PIECES, ids: [id] });
         SoundEngine.playSnap();
-        this.items = this.items.filter(i => i.id !== id);
         this.selectedIds.delete(id);
         if (this.activeItemId === id) this.activeItemId = null;
         this.renderBoard();
@@ -968,6 +1037,7 @@ import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.
           if (emptyHint) emptyHint.style.display = 'flex';
           this.updateWordPreviewFromPositions();
           this.updateSelectionUI();
+          this.persistBoard();
           return;
         }
         if (emptyHint) emptyHint.style.display = 'none';
@@ -998,6 +1068,7 @@ import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.
             if (e.target.closest('button')) return;
             e.preventDefault();
             const additive = Boolean(e.ctrlKey || e.metaKey || e.shiftKey);
+            this.checkpoint('MOVE_PIECES');
             this.selectItemForInteraction(item, { additive });
             this.refreshSelectionClasses();
             const origins = new Map(this.items.filter(i => this.selectedIds.has(i.id) && pieceCan(i, BOARD_CAPABILITIES.MOVABLE)).map(i => [i.id, { x: i.x, y: i.y }]));
@@ -1037,6 +1108,7 @@ import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.
         });
         this.updateWordPreviewFromPositions();
         this.updateSelectionUI();
+        this.persistBoard();
       },
 
       pronounceBoard() {
@@ -1052,7 +1124,8 @@ import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.
       },
 
       clearBoard() {
-        this.items = [];
+        if (this.items.length) this.checkpoint('CLEAR_BOARD');
+        this.state.replace([]);
         this.setSelection([], 'none', null);
         const canvas = document.getElementById('boardCanvas');
         if (canvas) canvas.style.minHeight = '';
@@ -1080,8 +1153,7 @@ import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.
         const badge = document.getElementById('platformProfileBadge');
         if (badge) badge.textContent = `${this.platform.label} • ${this.platform.notes}`;
 
-        // This experimental branch starts clean; v4/v4.1 remain untouched.
-        boardManager.items = [];
+        // Preserve a restored board; the baseline branch remains available for comparison.
         boardManager.setSelection([], 'none', null);
         this.setMode('free', true);
         boardManager.renderBoard();
