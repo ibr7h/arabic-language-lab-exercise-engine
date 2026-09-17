@@ -2,6 +2,7 @@ import { SoundEngine } from './core/sound-engine.js';
 import { ArabicText } from './core/arabic-text.js';
 import { confetti } from './core/confetti-lite.js';
 import { WordExerciseEngine } from './core/exercise-engine.js';
+import { PhraseExerciseEngine } from './core/phrase-exercise-engine.js';
 import { detectPlatformProfile } from './core/platform-profile.js';
 import { BOARD_CAPABILITIES, pieceCan, createHarakaPiece as createCanonicalHarakaPiece, createSpacePiece as createCanonicalSpacePiece, createLigaturePiece as createCanonicalLigaturePiece, fromLegacyLetterPiece } from './core/board-piece.js';
 import { ArabicIdentity } from './core/arabic-identity.js';
@@ -1138,6 +1139,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
        Exercise Board Adapter — platform-neutral learning activity layer
        ==================================================================== */
     const exerciseCore = new WordExerciseEngine(ArabicText);
+    const phraseExerciseCore = new PhraseExerciseEngine(ArabicText);
     const platformProfile = detectPlatformProfile();
 
     const exerciseBoard = {
@@ -1220,6 +1222,35 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
         };
       },
 
+      exerciseKind() {
+        return document.getElementById('exerciseKind')?.value === 'phrase' ? 'phrase' : 'word';
+      },
+
+      currentCore() {
+        return this.activeExercise?.kind === 'phrase' ? phraseExerciseCore : exerciseCore;
+      },
+
+      movableTargetIndices(exercise = this.activeExercise) {
+        return (exercise?.targetUnits || []).map((unit,index)=>unit === ' ' ? null : index).filter(index=>index != null);
+      },
+
+      contextualDataForExercise(exercise) {
+        const output = Array(exercise?.targetUnits?.length || 0).fill(null);
+        const units = exercise?.targetUnits || [];
+        let start=0;
+        while(start<units.length){
+          while(start<units.length && units[start]===' ') start+=1;
+          if(start>=units.length) break;
+          let end=start;
+          while(end<units.length && units[end]!==' ') end+=1;
+          const word=units.slice(start,end).join('');
+          const shapes=boardManager.wordToPiecesData(word,{mergeLigatures:false});
+          shapes.forEach((shape,offset)=>{ output[start+offset]=shape; });
+          start=end+1;
+        }
+        return output;
+      },
+
       usePreset(word) {
         const input = document.getElementById('exerciseTargetWord');
         if (input) input.value = word;
@@ -1230,22 +1261,26 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
         if (this.mode !== 'build') this.setMode('build');
         const input = document.getElementById('exerciseTargetWord');
         const word = input?.value?.trim() || '';
+        const core = this.exerciseKind() === 'phrase' ? phraseExerciseCore : exerciseCore;
         let exercise;
         try {
-          exercise = exerciseCore.create(word, this.readOptions());
+          exercise = core.create(word, this.readOptions());
+          if (!exercise.kind) exercise.kind = 'word';
         } catch (_) {
-          this.setStatus('اكتب كلمة عربية صحيحة أولًا.', 'error');
-          app.showToast('اكتب كلمة عربية أولًا');
+          this.setStatus('اكتب نصًا عربيًا صحيحًا أولًا.', 'error');
+          app.showToast('اكتب كلمة أو عبارة عربية أولًا');
           return;
         }
         this.activeExercise = exercise;
         this.lastResult = null;
         this.hintSlot = null;
+        boardManager.checkpoint('START_EXERCISE');
         boardManager.items = [];
         boardManager.setSelection([], 'none', null);
 
-        const contextual = boardManager.wordToPiecesData(exercise.targetWord, { mergeLigatures: false });
-        const shuffled = exerciseCore.scrambleIndices(exercise.targetUnits.length);
+        const contextual = this.contextualDataForExercise(exercise);
+        const movableIndices = this.movableTargetIndices(exercise);
+        const shuffled = core.scrambleIndices(movableIndices.length).map(i => movableIndices[i]);
         const positions = this.makeScatterPositions(shuffled.length);
         shuffled.forEach((targetIndex, positionIndex) => {
           const unit = exercise.targetUnits[targetIndex];
@@ -1256,15 +1291,14 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
             exerciseUnit: unit,
             exerciseTargetIndex: targetIndex
           });
-          boardManager.items.push(piece);
+          applyBoardCommand(boardManager.state,{type:BOARD_COMMANDS.ADD_PIECE,piece});
         });
 
-        const zone = document.getElementById('exerciseAssemblyZone');
-        zone?.classList.remove('hidden');
+        document.getElementById('exerciseAssemblyZone')?.classList.remove('hidden');
         this.renderSlots();
         boardManager.renderBoard();
         this.updateTargetBadge();
-        this.setStatus(`تم نثر ${exercise.targetUnits.length} حروف. اسحبها إلى الخانات من اليمين إلى اليسار.`, 'info');
+        this.setStatus(`تم نثر ${movableIndices.length} قطع. اسحبها إلى الخانات من اليمين إلى اليسار.`, 'info');
         SoundEngine.playVictory();
       },
 
@@ -1313,7 +1347,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
           return;
         }
         const items = this.exerciseItems();
-        const order = exerciseCore.scrambleIndices(items.length);
+        const order = this.currentCore().scrambleIndices(items.length);
         const positions = this.makeScatterPositions(items.length);
         order.forEach((itemIndex, positionIndex) => {
           const item = items[itemIndex];
@@ -1336,11 +1370,16 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
       },
 
       slotItems() {
-        const slots = Array(this.activeExercise?.targetUnits.length || 0).fill(null);
+        const targets=this.activeExercise?.targetUnits || [];
+        const slots=targets.map(unit=>unit===' ' ? { fixedSpace:true, exerciseUnit:' ' } : null);
         this.exerciseItems().forEach(item => {
-          if (Number.isInteger(item.exerciseSlot) && item.exerciseSlot >= 0 && item.exerciseSlot < slots.length) slots[item.exerciseSlot] = item;
+          if (Number.isInteger(item.exerciseSlot) && item.exerciseSlot >= 0 && item.exerciseSlot < slots.length && targets[item.exerciseSlot] !== ' ') slots[item.exerciseSlot] = item;
         });
         return slots;
+      },
+
+      slotValues() {
+        return this.slotItems().map(item => item?.fixedSpace ? ' ' : (item?.exerciseUnit ?? null));
       },
 
       renderSlots() {
@@ -1355,6 +1394,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
         zone.classList.remove('hidden');
         const slots = this.slotItems();
         wrap.innerHTML = slots.map((item, index) => {
+          if (item?.fixedSpace) return '<div class="exercise-slot fixed-space" aria-label="مسافة"><strong>␣</strong></div>';
           const resultClass = this.lastResult ? (this.lastResult.correctPositions[index] ? ' correct' : ' wrong') : '';
           const hintClass = this.hintSlot === index ? ' hint' : '';
           return `<div class="exercise-slot${item ? ' filled' : ''}${resultClass}${hintClass}" data-exercise-slot="${index}"><span>${index + 1}</span></div>`;
@@ -1421,8 +1461,10 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
         requestAnimationFrame(() => this.resnapAll());
         this.setStatus(this.progressMessage(), 'info');
 
-        const filled = this.slotItems().filter(Boolean).length;
-        if (filled === this.activeExercise.targetUnits.length && this.activeExercise.settings.autoCheck) {
+        const slotsNow = this.slotItems();
+        const filled = slotsNow.filter(item => item && !item.fixedSpace).length;
+        const movableTotal = this.movableTargetIndices().length;
+        if (filled === movableTotal && this.activeExercise.settings.autoCheck) {
           setTimeout(() => this.checkAnswer(), 120);
         }
       },
@@ -1457,10 +1499,10 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
 
       progressMessage() {
         if (!this.activeExercise) return 'لا يوجد نشاط حالي.';
-        const filled = this.slotItems().filter(Boolean).length;
-        const total = this.activeExercise.targetUnits.length;
-        if (!filled) return `الخانات فارغة — اسحب الحروف إلى منطقة «رتّب هنا».`;
-        if (filled < total) return `تم وضع ${filled} من ${total} حروف. أكمل الترتيب.`;
+        const filled = this.slotItems().filter(item => item && !item.fixedSpace).length;
+        const total = this.movableTargetIndices().length;
+        if (!filled) return 'الخانات فارغة — اسحب الحروف إلى منطقة «رتّب هنا».';
+        if (filled < total) return `تم وضع ${filled} من ${total} قطع. أكمل الترتيب.`;
         return `اكتملت الخانات (${total}/${total}). اضغط «تحقق من الترتيب».`;
       },
 
@@ -1470,14 +1512,15 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
           return;
         }
         const slots = this.slotItems();
-        const result = exerciseCore.compare(this.activeExercise, slots.map(item => item?.exerciseUnit ?? null));
+        const result = this.currentCore().compare(this.activeExercise, this.slotValues());
         this.activeExercise.attempts += 1;
         this.lastResult = result;
         this.hintSlot = null;
         this.renderSlots();
         requestAnimationFrame(() => this.resnapAll());
         if (!result.complete) {
-          this.setStatus(`بقي ${result.total - result.filled} حروف خارج الخانات.`, 'error');
+          const missing = this.movableTargetIndices().length - this.slotItems().filter(item => item && !item.fixedSpace).length;
+          this.setStatus(`بقي ${missing} قطع خارج الخانات.`, 'error');
           SoundEngine.playSnap();
           return;
         }
@@ -1488,7 +1531,8 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
           SoundEngine.speakArabic(this.activeExercise.targetWord);
           confetti({ particleCount: 55, spread: 65, origin: { y: .58 } });
         } else {
-          this.setStatus(`هناك ${result.correctCount} من ${result.total} حروف في أماكنها الصحيحة. حاول مرة أخرى.`, 'error');
+          const spaceCount = this.activeExercise.targetUnits.filter(unit=>unit===' ').length;
+          this.setStatus(`هناك ${Math.max(0,result.correctCount-spaceCount)} من ${this.movableTargetIndices().length} قطع في أماكنها الصحيحة. حاول مرة أخرى.`, 'error');
           SoundEngine.playSnap();
         }
       },
@@ -1499,7 +1543,7 @@ import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
           return;
         }
         const slots = this.slotItems();
-        const result = exerciseCore.compare(this.activeExercise, slots.map(item => item?.exerciseUnit ?? null));
+        const result = this.currentCore().compare(this.activeExercise, this.slotValues());
         const index = result.correctPositions.findIndex(ok => !ok);
         if (index < 0) {
           this.setStatus('الترتيب صحيح بالفعل — اضغط تحقق.', 'success');
