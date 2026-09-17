@@ -8,7 +8,7 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ verified · 🔴 block
 
 ## Phase 1 — Arabic domain foundation
 
-- 🟡 T01 — Canonical board-piece data model: `letter`, `haraka`, `ligature`, `space`, shared transform/capabilities, legacy adapter, unit tests. Implementation committed; CI verification pending.
+- ✅ T01 — Canonical board-piece data model: `letter`, `haraka`, `ligature`, `space`, shared transform/capabilities, legacy adapter, unit tests. CI and Pages deployment verified successfully.
 - ⬜ T02 — Separate linguistic identity from visual glyph shaping; preserve `ة` and `ى` identities.
 - ⬜ T03 — Lam–alif ligature engine for `لا، لأ، لإ، لآ`.
 - ⬜ T04 — Expand Arabic regression matrix for hamza, alif variants, ta marbuta, alif maqsura, shadda, tanween and madd.
