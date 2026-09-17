@@ -1,3 +1,4 @@
-Arabic Language Lab — Exercise Engine Prototype v1
-Independent review branch
-2026-09-17
+Arabic Language Lab — Refactor v5
+Canonical Arabic + Board State + Free Harakat + Multi-Platform
+2026-09-18
+Baseline: baseline-before-refactor-2026-09-18 @ 6f1b2abcf72e6828df84ffdaa84440059fed75bd
