@@ -34,7 +34,7 @@ for (const a of ['ا','أ','إ','آ']) {
 }
 
 const salat = bm.wordToPiecesData('الصَّلَاةَ');
-assert.ok(salat.some(p => p.glyph.includes('ـا')), 'plain alif must remain plain alif');
+assert.ok(salat.some(p => p.type === 'ligature' && p.logicalText.includes('لا')), 'plain alif must remain plain alif inside the lam-alif ligature');
 assert.ok(!salat.some(p => p.glyph.includes('أ')), 'plain alif must not turn into hamza');
 const eman = bm.wordToPiecesData('إِيمَانٌ');
 assert.ok(eman.some(p => p.glyph.includes('إ')), 'hamza-below alif must be preserved');
