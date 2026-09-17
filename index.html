@@ -198,6 +198,8 @@
         </div>
 
         <div class="flex items-center gap-1.5 flex-wrap">
+          <button data-onclick="boardManager.undo()" class="board-selection-btn" title="تراجع عن آخر تغيير">↶ تراجع</button>
+          <button data-onclick="boardManager.redo()" class="board-selection-btn" title="إعادة التغيير">↷ إعادة</button>
           <button data-onclick="boardManager.selectAll()" class="board-selection-btn" title="تحديد كل قطع السبورة">☑️ تحديد الكل</button>
           <button data-onclick="boardManager.clearSelection()" class="board-selection-btn" title="إلغاء التحديد">إلغاء التحديد</button>
           <button data-onclick="boardManager.detachSelectedWord()" class="board-selection-btn word-edit" title="فك الكلمة إلى حروف مستقلة">🔓 فك الكلمة</button>
