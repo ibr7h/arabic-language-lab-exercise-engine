@@ -1,8 +1,8 @@
-const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v9-2026-09-18-update-strategy';
+const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v10-2026-09-18-ui-module';
 const CORE = [
   './', './index.html', './manifest.webmanifest', './LICENSE.txt',
   './assets/css/tailwind.css', './assets/css/app.css',
-  './assets/js/app.js', './assets/js/pwa.js',
+  './assets/js/app.js', './assets/js/pwa.js', './assets/js/ui/board-piece-view.js',
   './assets/js/core/arabic-text.js', './assets/js/core/arabic-identity.js', './assets/js/core/ligature-engine.js', './assets/js/core/board-piece.js', './assets/js/core/board-state.js', './assets/js/core/board-history.js', './assets/js/core/board-commands.js', './assets/js/core/sound-engine.js', './assets/js/core/confetti-lite.js',
   './assets/js/core/exercise-engine.js', './assets/js/core/phrase-exercise-engine.js', './assets/js/core/platform-profile.js', './assets/js/core/platform-adapter.js', './assets/js/core/harakat-renderer.js',
   './assets/icons/icon-192.png', './assets/icons/icon-512.png', './assets/icons/apple-touch-icon.png'
