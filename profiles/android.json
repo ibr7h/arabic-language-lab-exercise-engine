@@ -1,0 +1,10 @@
+{
+  "id": "android",
+  "label": "Android PWA",
+  "input": "touch",
+  "minTouchTarget": 48,
+  "safeArea": false,
+  "longPressMs": 420,
+  "boardInteraction": "drag",
+  "orientation": "any"
+}

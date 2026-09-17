@@ -1,0 +1,10 @@
+{
+  "id": "ios",
+  "label": "iOS PWA",
+  "input": "touch",
+  "minTouchTarget": 44,
+  "safeArea": true,
+  "longPressMs": 460,
+  "boardInteraction": "drag",
+  "orientation": "any"
+}

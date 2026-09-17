@@ -1,0 +1,8 @@
+{
+  "id": "webos",
+  "label": "webOS TV PWA",
+  "input": "remote",
+  "focusMode": "focus-first",
+  "boardInteraction": "pick-move-drop",
+  "keys": ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "Back"]
+}
