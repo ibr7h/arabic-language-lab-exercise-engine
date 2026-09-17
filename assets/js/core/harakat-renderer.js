@@ -9,6 +9,12 @@ const LEGACY_TOP_MARK_PATHS = new Map([
   ['M7 19 C6 11 13 8 17 12 C20 16 17 21 12 21 C18 23 22 19 23 15 M21 14 C21 7 28 6 31 10 C34 14 31 19 27 19', 'ٌ']
 ]);
 
+const NATIVE_MARK_BOX = {
+  'ُ': { width: 0.96, height: 0.70 },
+  'ّ': { width: 1.00, height: 0.72 },
+  'ٌ': { width: 1.12, height: 0.76 }
+};
+
 export function markFromLegacyPath(pathData) {
   const normalized = String(pathData || '').trim().replace(/\s+/g, ' ');
   return LEGACY_TOP_MARK_PATHS.get(normalized) || null;
@@ -37,6 +43,13 @@ function replaceLegacyTopMark(span) {
 
   span.dataset.nativeHaraka = '1';
   span.dataset.haraka = mark;
+
+  const box = NATIVE_MARK_BOX[mark];
+  if (box) {
+    span.style.width = `${box.width}em`;
+    span.style.height = `${box.height}em`;
+  }
+
   span.innerHTML = nativeTopMarkSvg(mark);
 }
 
