@@ -27,12 +27,12 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ verified · 🔴 block
 
 ## Phase 3 — Board architecture
 
-- ⬜ T14 — Capability-based select/move/resize/delete.
-- ⬜ T15 — Board command model.
-- ⬜ T16 — Split `app.js` into domain/board/exercise/ui/platform modules.
-- ⬜ T17 — DOM-independent board state.
-- ⬜ T18 — Persist board state locally.
-- ⬜ T19 — Undo/redo command history.
+- 🟡 T14 — Capability-based select/move/resize/delete. Implementation complete; CI verification pending.
+- 🟡 T15 — Board command model. Implementation complete; CI verification pending.
+- 🟡 T16 — Split `app.js` into domain/board/exercise/ui/platform modules. Core domain, board state, commands and exercise layers extracted; UI controller split remains to verify.
+- 🟡 T17 — DOM-independent board state. Implementation complete; CI verification pending.
+- 🟡 T18 — Persist board state locally. Implementation complete; CI verification pending.
+- 🟡 T19 — Undo/redo command history. Implementation complete; CI verification pending.
 
 ## Phase 4 — Exercises and platforms
 
