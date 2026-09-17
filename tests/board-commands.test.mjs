@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import { BoardState } from '../assets/js/core/board-state.js';
+import { BOARD_COMMANDS, applyBoardCommand } from '../assets/js/core/board-commands.js';
+const s=new BoardState([]);
+applyBoardCommand(s,{type:BOARD_COMMANDS.ADD_PIECE,piece:{id:'a',x:0,y:0,scale:1}});
+applyBoardCommand(s,{type:BOARD_COMMANDS.MOVE_PIECE,id:'a',x:10,y:20});
+applyBoardCommand(s,{type:BOARD_COMMANDS.RESIZE_PIECES,ids:['a'],delta:.5});
+assert.equal(s.items[0].x,10); assert.equal(s.items[0].scale,1.5);
+applyBoardCommand(s,{type:BOARD_COMMANDS.DELETE_PIECES,ids:['a']}); assert.equal(s.items.length,0);
+console.log('Board command tests: OK');
