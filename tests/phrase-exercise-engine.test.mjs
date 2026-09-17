@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { ArabicText } from '../assets/js/core/arabic-text.js';
+import { PhraseExerciseEngine } from '../assets/js/core/phrase-exercise-engine.js';
+const e=new PhraseExerciseEngine(ArabicText);
+const p=e.create('ذَهَبَ مُحَمَّدٌ');
+assert.equal(p.kind,'phrase');
+assert.ok(p.targetUnits.includes(' '));
+const spaceIndex=p.targetUnits.indexOf(' ');
+assert.equal(p.targetKeys[spaceIndex],'␠');
+const actual=[...p.targetUnits];
+assert.equal(e.compare(p,actual).correct,true);
+actual[0]=null;
+assert.equal(e.compare(p,actual).correct,false);
+console.log('Phrase exercise tests: OK');
