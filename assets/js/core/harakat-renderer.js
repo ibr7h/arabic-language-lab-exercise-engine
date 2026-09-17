@@ -12,7 +12,9 @@ const LEGACY_TOP_MARK_PATHS = new Map([
 const NATIVE_MARK_BOX = {
   'ُ': { width: 0.96, height: 0.70 },
   'ّ': { width: 1.00, height: 0.72 },
-  'ٌ': { width: 1.28, height: 0.76 }
+  // Tanween damm: compact overall box, but each individual damma is drawn
+  // at roughly the same visual scale as the fatha overlay.
+  'ٌ': { width: 0.92, height: 0.58 }
 };
 
 const ARABIC_MARK_FONT = "'Geeza Pro','SF Arabic','Noto Naskh Arabic','Traditional Arabic',serif";
@@ -30,10 +32,11 @@ function nativeSingleTopMarkSvg(mark) {
 }
 
 function nativeDammatanSvg() {
-  // Educational display: tanween damm is shown as two clear dammas side-by-side.
-  // Each damma is independently shaped by the Arabic font on its own carrier.
+  // Educational display: two large, tightly adjacent dammas.
+  // A separate tatweel carrier is retained for each mark so the Arabic font
+  // shapes the damma correctly, while both carriers remain below the viewport.
   const sample = 'ـُ';
-  return `<svg viewBox="0 0 68 28" aria-hidden="true" focusable="false" style="overflow:hidden" preserveAspectRatio="xMidYMid meet"><text x="20" y="40" text-anchor="middle" direction="rtl" font-size="46" font-weight="400" fill="currentColor" style="font-family:${ARABIC_MARK_FONT}">${sample}</text><text x="48" y="40" text-anchor="middle" direction="rtl" font-size="46" font-weight="400" fill="currentColor" style="font-family:${ARABIC_MARK_FONT}">${sample}</text></svg>`;
+  return `<svg viewBox="0 0 58 30" aria-hidden="true" focusable="false" style="overflow:hidden" preserveAspectRatio="xMidYMid meet"><text x="23" y="50" text-anchor="middle" direction="rtl" font-size="58" font-weight="400" fill="currentColor" style="font-family:${ARABIC_MARK_FONT}">${sample}</text><text x="35" y="50" text-anchor="middle" direction="rtl" font-size="58" font-weight="400" fill="currentColor" style="font-family:${ARABIC_MARK_FONT}">${sample}</text></svg>`;
 }
 
 export function nativeTopMarkSvg(mark) {
