@@ -47,6 +47,6 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ verified · 🔴 block
 
 - ⬜ T26 — Browser E2E tests.
 - ⬜ T27 — Full regression suite.
-- ⬜ T28 — PWA/cache update strategy.
+- 🟡 T28 — PWA/cache update strategy. Network-first code updates + Service Worker update/reload strategy implemented and unit-tested; final CI pending.
 - ⬜ T29 — Synchronize README/ARCHITECTURE/CHANGELOG/VERSION.
 - ⬜ T30 — Final comparison against the baseline branch.
