@@ -15,7 +15,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Syntax checks
+        run: |
+          node --check assets/js/app.js
+          node --check assets/js/pwa.js
+          node --check assets/js/core/arabic-text.js
+          node --check assets/js/core/exercise-engine.js
+          node --check assets/js/core/platform-profile.js
+          node --check assets/js/core/sound-engine.js
+          node --check sw.js
+
+      - name: Run regression and exercise tests
+        run: |
+          node tests/arabic-engine.test.mjs
+          node tests/board-v3.test.mjs
+          node tests/board-v4.test.mjs
+          node tests/board-v41.test.mjs
+          node tests/exercise-engine.test.mjs
+          node tests/exercise-board-piece.test.mjs
+
   deploy:
+    needs: test
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -23,14 +54,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
