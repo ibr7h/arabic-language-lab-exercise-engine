@@ -811,6 +811,10 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
             exerciseBoard.onPieceDrop(droppedId);
           } else {
             this.updateWordPreviewFromPositions();
+            // Dragging updates live objects directly; persist the final
+            // coordinates now so reloads/PWA updates cannot restore an older
+            // position.
+            this.persistBoard();
           }
         };
 
@@ -1589,7 +1593,19 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
             e.preventDefault();
             const additive = Boolean(e.ctrlKey || e.metaKey || e.shiftKey);
             this.checkpoint('MOVE_PIECES');
-            this.selectItemForInteraction(item, { additive });
+
+            // If the user already selected one specific piece, keep that
+            // selection when dragging it. Previously pointerdown re-ran the
+            // word-selection toggle and could turn the drag back into a
+            // whole-word move.
+            const preserveSingleSelection =
+              !additive &&
+              this.selectedIds.size === 1 &&
+              this.selectedIds.has(item.id) &&
+              ['letter','ligature','haraka'].includes(this.selectionMode);
+            if (!preserveSingleSelection) {
+              this.selectItemForInteraction(item, { additive });
+            }
             this.refreshSelectionClasses();
             const origins = new Map(this.items.filter(i => this.selectedIds.has(i.id) && pieceCan(i, BOARD_CAPABILITIES.MOVABLE)).map(i => [i.id, { x: i.x, y: i.y }]));
             const state = {
