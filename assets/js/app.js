@@ -271,6 +271,7 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
         const btn = document.getElementById('pieceFrameToggleBtn');
         if (!btn) return;
         btn.classList.toggle('active', this.showPieceFrames);
+        btn.setAttribute('aria-pressed', this.showPieceFrames ? 'true' : 'false');
         btn.textContent = this.showPieceFrames ? '▣ إطار القطع: ظاهر' : '□ إطار القطع: مخفي';
       },
 
