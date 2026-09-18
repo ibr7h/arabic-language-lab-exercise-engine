@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { nativeHarakaSvg, renderAttachedHaraka, renderFreeHaraka } from '../assets/js/core/harakat-renderer.js';
+import { nativeHarakaSvg, renderAttachedHaraka, renderShaddaKasraStack, renderFreeHaraka } from '../assets/js/core/harakat-renderer.js';
 
 for (const mark of ['َ','ُ','ِ','ْ','ّ','ً','ٌ','ٍ']) {
   const svg=nativeHarakaSvg(mark);
@@ -16,12 +16,16 @@ for (const mark of ['َ','ُ','ِ','ْ','ّ','ً','ٌ','ٍ']) {
   assert.ok(!free.includes('ـ'));
 }
 
-const shaddaKasra=renderAttachedHaraka('ِ',{anchor:58,withShadda:true});
-assert.ok(shaddaKasra.includes('mark-kasra-with-shadda'),'kasra must stack below shadda rather than under the letter');
-assert.ok(shaddaKasra.includes('--mark-anchor:58%'),'custom letter anchor must be preserved');
+const stack=renderShaddaKasraStack({anchor:58});
+assert.ok(stack.includes('mark-stack-shadda-kasra'));
+assert.ok(stack.includes('stack-shadda'));
+assert.ok(stack.includes('stack-kasra'));
+assert.ok(stack.includes('data-haraka="ّ"'));
+assert.ok(stack.includes('data-haraka="ِ"'));
+assert.ok(stack.includes('--mark-anchor:58%'));
 
 const ordinaryKasra=renderAttachedHaraka('ِ',{anchor:50,withShadda:false});
 assert.ok(ordinaryKasra.includes('mark-bottom'));
-assert.ok(!ordinaryKasra.includes('mark-kasra-with-shadda'));
+assert.ok(!ordinaryKasra.includes('mark-stack-shadda-kasra'));
 
 console.log('Unified haraka renderer tests: OK');
