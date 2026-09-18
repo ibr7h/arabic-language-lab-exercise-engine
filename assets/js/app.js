@@ -676,9 +676,7 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
           const hasShadda = marks.includes('ّ');
           const hasKasra = marks.includes('ِ');
 
-          // Render شدة + كسرة as one explicit visual stack so the font cannot
-          // push the kasra back underneath the base letter.
-          if (hasShadda && hasKasra) {
+          if (hasShadda && hasKasra && this.shaddaKasraMode === 'school') {
             const anchor = this.getMarkAnchor(item, 'ّ', componentIndex);
             html.push(renderShaddaKasraStack({ anchor }));
             for (const mark of marks) {
@@ -692,9 +690,10 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
           }
 
           for (const mark of marks) {
+            const isUthmaniKasra = this.shaddaKasraMode === 'uthmani' && hasShadda && mark === 'ِ';
             html.push(renderAttachedHaraka(mark, {
               anchor: this.getMarkAnchor(item, mark, componentIndex),
-              withShadda: hasShadda
+              withShadda: isUthmaniKasra ? false : hasShadda
             }));
           }
         }
@@ -834,7 +833,7 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
 
       getWordIds(wordId) {
         if (!wordId) return [];
-        return this.items.filter(i => i.wordId === wordId && i.type !== 'space').map(i => i.id);
+        return this.items.filter(i => i.wordId === wordId).map(i => i.id);
       },
 
       isWholeWordSelected(item) {
@@ -1303,6 +1302,24 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
         });
       },
 
+      textToPiecesData(text, options = {}) {
+        const source = String(text || '');
+        const parts = source.split(/(\s+)/u).filter(Boolean);
+        const result = [];
+        for (const part of parts) {
+          if (/^\s+$/u.test(part)) {
+            result.push({
+              type: 'space',
+              width: Math.max(0.9, Math.min(2.8, part.length * 0.9)),
+              value: ' '
+            });
+            continue;
+          }
+          result.push(...this.wordToPiecesData(part, options));
+        }
+        return result;
+      },
+
       getNextWordY(currentHeight = 400) {
         const groups = [...new Set(this.items.filter(i => i.wordId).map(i => i.wordId))];
         const row = groups.length;
@@ -1323,9 +1340,9 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
           app.showToast('اكتبي كلمة أولًا');
           return;
         }
-        const piecesData = this.wordToPiecesData(clean);
-        if (!piecesData.length) {
-          app.showToast('لم أتعرف على حروف عربية في الكلمة');
+        const piecesData = this.textToPiecesData(clean);
+        if (!piecesData.some(piece => piece.type !== 'space')) {
+          app.showToast('لم أتعرف على حروف عربية في النص');
           return;
         }
         this.checkpoint(clear ? 'LOAD_COMPLETED_WORD' : 'ADD_COMPLETED_WORD');
@@ -1338,21 +1355,38 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
         const wordId = `word_${++this.wordCounter}_${Date.now()}`;
         const y = this.getNextWordY(rect.height);
         const usableWidth = Math.max(220, rect.width - 120);
-        const spacing = Math.min(76, usableWidth / Math.max(1, piecesData.length));
-        const startX = rect.width - 82;
-        const newIds = [];
-        piecesData.forEach((p, idx) => {
-          const px = Math.max(14, startX - idx * spacing);
+        const weightedUnits = piecesData.reduce((sum, piece) => sum + (piece.type === 'space' ? (Number(piece.width) || 0.9) : 1), 0);
+        const spacing = Math.min(76, usableWidth / Math.max(1, weightedUnits));
+        let cursorX = rect.width - 82;
+
+        for (const p of piecesData) {
+          const px = Math.max(14, cursorX);
+          if (p.type === 'space') {
+            const piece = createCanonicalSpacePiece({
+              x: px,
+              y,
+              width: Number(p.width) || 0.9,
+              metadata: { phraseSpace: true }
+            });
+            piece.value = ' ';
+            piece.wordId = wordId;
+            piece.wordLabel = clean;
+            this.items.push(piece);
+            cursorX -= spacing * (Number(p.width) || 0.9);
+            continue;
+          }
+
           const piece = p.type === 'ligature'
             ? this.createLigaturePiece(p, px, y, { wordId, wordLabel: clean })
             : this.createLetterPiece(p.glyph, p.color, p.name, px, y, { wordId, wordLabel: clean });
           this.items.push(piece);
-          newIds.push(piece.id);
-        });
+          cursorX -= spacing;
+        }
+
         this.setSelection([], 'none', null);
         this.ensureBoardHeight();
         this.renderBoard();
-        app.showToast(`${clear ? 'تم تحميل' : 'تمت إضافة'} كلمة: ${clean}`);
+        app.showToast(`${clear ? 'تم تحميل' : 'تمت إضافة'}: ${clean}`);
       },
 
       loadPresetWord(word) {
@@ -1389,17 +1423,19 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
           group.sort((a, b) => b.x - a.x);
           const y = 34 + row * 98;
           const usable = Math.max(180, rect.width - 120);
-          const spacing = Math.min(76, usable / Math.max(1, group.length));
-          const startX = rect.width - 82;
-          group.forEach((item, idx) => {
-            item.x = Math.max(12, startX - idx * spacing);
+          const weightedUnits = group.reduce((sum, item) => sum + (item.type === 'space' ? (Number(item.width) || 0.9) : 1), 0);
+          const spacing = Math.min(76, usable / Math.max(1, weightedUnits));
+          let cursorX = rect.width - 82;
+          group.forEach(item => {
+            item.x = Math.max(12, cursorX);
             item.y = y;
+            cursorX -= spacing * (item.type === 'space' ? (Number(item.width) || 0.9) : 1);
           });
           row += 1;
         });
         this.ensureBoardHeight();
         this.renderBoard();
-        app.showToast('تم ترتيب كل كلمة في سطر مستقل');
+        app.showToast('تم ترتيب النص مع الحفاظ على المسافات');
       },
 
       scatterPieces() {
@@ -1481,11 +1517,14 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
           const avg = selected.length ? selected.reduce((sum, i) => sum + (Number(i.scale) || 1), 0) / selected.length : 1;
           scaleOut.textContent = `${Math.round(avg * 100)}%`;
         }
+        this.syncHarakaCalibrationUI();
       },
 
       renderBoard() {
         const container = document.getElementById('boardCanvas');
         if (!container) return;
+        container.classList.toggle('piece-frames-hidden', !this.showPieceFrames);
+        this.syncPieceFrameUI();
         const emptyHint = document.getElementById('emptyBoardHint');
         const countSpan = document.getElementById('boardPieceCount');
         if (countSpan) countSpan.textContent = `${this.items.length} قطع فوم`;
@@ -1520,6 +1559,7 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
             contentHtml: pieceHtml,
             deleteAction: `<button data-onclick="event.stopPropagation(); boardManager.removePieceById('${item.id}')" class="piece-delete-btn" title="حذف القطعة">✕</button>`
           });
+          this.applyHarakaCalibrationToElement(el, item);
           el.setAttribute('aria-label', this.accessiblePieceLabel(item));
 
           el.addEventListener('keydown', (e) => {
@@ -3202,6 +3242,7 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
       init() {
         // Apply default kid-friendly font class
         document.body.classList.add(this.currentFont);
+        this.syncArabicFontVariable();
 
         boardManager.init();
         exerciseBoard.init();
@@ -3218,6 +3259,12 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
         }, { once: true });
       },
 
+      syncArabicFontVariable() {
+        if (typeof document === 'undefined' || typeof getComputedStyle === 'undefined') return;
+        const family = getComputedStyle(document.body).fontFamily || "system-ui, 'SF Arabic', 'Geeza Pro', sans-serif";
+        document.documentElement.style.setProperty('--arabic-font-family', family);
+      },
+
       changeAppFont(fontClass) {
         SoundEngine.playSnap();
         // Remove previous font classes
@@ -3225,6 +3272,7 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
         
         this.currentFont = fontClass;
         document.body.classList.add(fontClass);
+        this.syncArabicFontVariable();
 
         const sel = document.getElementById('appFontPicker');
         if (sel && sel.value !== fontClass) sel.value = fontClass;
