@@ -759,11 +759,22 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
 /* ================================================================
    Canonical haraka geometry — one authoritative rule set
    Free and attached marks keep the same visual scale.
+   Values below can be tuned live from the calibration panel.
    ================================================================ */
+:root {
+  --haraka-attached-scale: 1;
+  --haraka-top-offset: -.34em;
+  --haraka-bottom-offset: -.14em;
+  --haraka-stack-kasra-top: 16%;
+  --dammatan-scale: 1;
+  --dammatan-lobe-a-x: -5px;
+  --dammatan-lobe-b-x: 5px;
+}
 .foam-mark-overlay {
   position:absolute;
   left:var(--mark-anchor, 50%);
-  transform:translateX(-50%);
+  transform:translateX(-50%) scale(var(--haraka-attached-scale, 1));
+  transform-origin:center center;
   width:1.34em !important;
   height:1.02em !important;
   font-size:1em !important;
@@ -781,9 +792,9 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
   display:block;
   overflow:visible !important;
 }
-.foam-mark-overlay.mark-top { top:-.34em !important; }
+.foam-mark-overlay.mark-top { top:var(--haraka-top-offset, -.34em) !important; }
 .foam-mark-overlay.mark-shadda {
-  top:-.32em !important;
+  top:var(--haraka-top-offset, -.34em) !important;
   width:1.34em !important;
   height:1.02em !important;
 }
@@ -795,10 +806,10 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
   width:1.34em !important;
   height:1.02em !important;
 }
-.foam-mark-overlay.mark-bottom { bottom:-.14em !important; }
+.foam-mark-overlay.mark-bottom { bottom:var(--haraka-bottom-offset, -.14em) !important; }
 
 .foam-mark-overlay.mark-stack-shadda-kasra {
-  top:-.30em !important;
+  top:var(--haraka-top-offset, -.34em) !important;
   bottom:auto !important;
   width:1.22em !important;
   height:.54em !important;
@@ -816,7 +827,7 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
   height:72%;
 }
 .mark-stack-shadda-kasra .stack-kasra {
-  top:16%;
+  top:var(--haraka-stack-kasra-top, 16%);
   height:72%;
 }
 .mark-stack-shadda-kasra svg {
@@ -825,6 +836,12 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
   display:block;
   overflow:visible !important;
 }
+.dammatan-double-svg {
+  transform:scale(var(--dammatan-scale, 1));
+  transform-origin:center center;
+}
+.dammatan-lobe-a { transform:translateX(var(--dammatan-lobe-a-x, -5px)); }
+.dammatan-lobe-b { transform:translateX(var(--dammatan-lobe-b-x, 5px)); }
 
 .free-foam-piece.piece-type-haraka {
   min-width:.72em;
@@ -855,6 +872,97 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
 .haraka-mode-btn { border:1px solid #fecdd3; background:#fff; color:#9f1239; border-radius:.6rem; padding:.2rem .48rem; font-size:.62rem; font-weight:900; cursor:pointer; }
 .haraka-mode-btn.active { background:#e11d48; color:#fff; border-color:#e11d48; }
 .haraka-link-btn { border-color:#fda4af; background:#fff7f8; }
+
+.haraka-calibration-wrap {
+  margin-top:.4rem;
+  border-top:1px dashed #fecdd3;
+  padding-top:.4rem;
+}
+.haraka-calibration-toggle {
+  border:1px solid #fda4af;
+  background:#fff;
+  color:#9f1239;
+  border-radius:.65rem;
+  padding:.28rem .55rem;
+  font-size:.66rem;
+  font-weight:900;
+  cursor:pointer;
+}
+.haraka-calibration-panel {
+  margin-top:.45rem;
+  padding:.55rem;
+  border:1px solid #fbcfe8;
+  border-radius:.8rem;
+  background:#fff;
+}
+.haraka-calibration-panel.hidden { display:none; }
+.haraka-calibration-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.45rem .7rem;
+}
+.haraka-calibration-control {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(90px,1.1fr) 48px;
+  gap:.35rem;
+  align-items:center;
+  font-size:.62rem;
+  font-weight:800;
+  color:#881337;
+}
+.haraka-calibration-control input[type="range"] {
+  width:100%;
+  accent-color:#e11d48;
+}
+.haraka-calibration-control output {
+  direction:ltr;
+  text-align:center;
+  border:1px solid #fecdd3;
+  background:#fff7f8;
+  border-radius:.45rem;
+  padding:.1rem .2rem;
+  color:#9f1239;
+  font-variant-numeric:tabular-nums;
+}
+.haraka-calibration-actions {
+  display:flex;
+  gap:.35rem;
+  flex-wrap:wrap;
+  align-items:center;
+  margin-top:.55rem;
+}
+.haraka-calibration-actions code {
+  flex:1 1 360px;
+  direction:ltr;
+  text-align:left;
+  font-size:.64rem;
+  padding:.35rem .45rem;
+  border:1px solid #e2e8f0;
+  border-radius:.55rem;
+  background:#f8fafc;
+  color:#334155;
+  overflow:auto;
+}
+.haraka-calibration-actions button {
+  border:1px solid #cbd5e1;
+  background:#fff;
+  color:#334155;
+  border-radius:.55rem;
+  padding:.3rem .5rem;
+  font-size:.62rem;
+  font-weight:900;
+  cursor:pointer;
+}
+.haraka-calibration-note {
+  margin-top:.4rem;
+  font-size:.6rem;
+  color:#64748b;
+  font-weight:700;
+}
+@media (max-width:640px) {
+  .haraka-calibration-grid { grid-template-columns:1fr; }
+  .haraka-calibration-control { grid-template-columns:minmax(0,1fr) minmax(100px,1.2fr) 46px; }
+}
 
 .lam-alif-toolbox {
   margin-top:.35rem;
