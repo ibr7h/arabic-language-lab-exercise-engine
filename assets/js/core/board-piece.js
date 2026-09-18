@@ -101,7 +101,11 @@ export function createLigaturePiece(data = {}) {
     ...createBasePiece(BOARD_PIECE_TYPES.LIGATURE, data),
     logicalText,
     components,
-    displayGlyph: String(data.displayGlyph ?? logicalText),
+    baseText: String(data.baseText ?? components.join('')),
+    displayGlyph: String(data.displayGlyph ?? data.baseText ?? components.join('')),
+    markAttachments: Array.isArray(data.markAttachments)
+      ? data.markAttachments.map(entry => ({ mark: String(entry?.mark ?? ''), componentIndex: Number(entry?.componentIndex) || 0 })).filter(entry => entry.mark)
+      : [],
     marks: Array.isArray(data.marks) ? [...data.marks] : [],
     colorClass: String(data.colorClass ?? '')
   };
