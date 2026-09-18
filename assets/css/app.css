@@ -781,21 +781,50 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
   display:block;
   overflow:visible !important;
 }
-.foam-mark-overlay.mark-top { top:-.88em !important; }
+.foam-mark-overlay.mark-top { top:-.34em !important; }
 .foam-mark-overlay.mark-shadda {
-  top:-.88em !important;
+  top:-.32em !important;
   width:1.34em !important;
   height:1.02em !important;
 }
-.foam-mark-overlay.mark-top.mark-with-shadda { top:-1.18em !important; }
+.foam-mark-overlay.mark-top.mark-with-shadda { top:-.58em !important; }
 /* In Arabic pedagogy, kasra with shadda sits below the shadda, not below the letter. */
 .foam-mark-overlay.mark-kasra-with-shadda {
-  top:-.48em !important;
+  top:-.08em !important;
   bottom:auto !important;
   width:1.34em !important;
   height:1.02em !important;
 }
-.foam-mark-overlay.mark-bottom { bottom:-.62em !important; }
+.foam-mark-overlay.mark-bottom { bottom:-.14em !important; }
+
+.foam-mark-overlay.mark-stack-shadda-kasra {
+  top:-.38em !important;
+  bottom:auto !important;
+  width:1.28em !important;
+  height:.72em !important;
+}
+.mark-stack-shadda-kasra .stack-shadda,
+.mark-stack-shadda-kasra .stack-kasra {
+  position:absolute;
+  left:0;
+  width:100%;
+  display:block;
+  pointer-events:none;
+}
+.mark-stack-shadda-kasra .stack-shadda {
+  top:0;
+  height:62%;
+}
+.mark-stack-shadda-kasra .stack-kasra {
+  top:34%;
+  height:62%;
+}
+.mark-stack-shadda-kasra svg {
+  width:100%;
+  height:100%;
+  display:block;
+  overflow:visible !important;
+}
 
 .free-foam-piece.piece-type-haraka {
   min-width:.72em;
