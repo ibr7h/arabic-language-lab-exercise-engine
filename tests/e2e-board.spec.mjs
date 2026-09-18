@@ -12,7 +12,7 @@ test.describe('Arabic Language Lab board E2E', () => {
   test('visible build badge identifies the loaded app version', async ({ page }) => {
     const badge=page.locator('#appVersionBadge');
     await expect(badge).toBeVisible();
-    await expect(badge).toHaveText('Version v12.1 • Build 2026-09-18');
+    await expect(badge).toHaveText('Version v12.2 • Build 2026-09-18');
   });
 
   test('lam-alif, free haraka, resize, keyboard movement, phrase spaces', async ({ page }) => {
@@ -105,10 +105,30 @@ test.describe('Arabic Language Lab board E2E', () => {
     await expect(kasra).toHaveAttribute('style', /--mark-anchor:58%/);
     const attachedKasraBox=await kasra.boundingBox();
 
-    // With shadda, kasra must move into the stacked-above-letter geometry.
+    // With shadda, kasra must be a composite stack below shadda and still above the letter center.
     await page.locator('#harakatButtonsRow button[title="شدة"]').click();
-    await expect(page.locator('.piece-type-letter .mark-kasra-with-shadda[data-haraka="ِ"]')).toHaveCount(1);
-    await expect(page.locator('.piece-type-letter .mark-shadda[data-haraka="ّ"]')).toHaveCount(1);
+    const stack=page.locator('.piece-type-letter .mark-stack-shadda-kasra');
+    await expect(stack).toHaveCount(1);
+    const shaddaInStack=stack.locator('.stack-shadda');
+    const kasraInStack=stack.locator('.stack-kasra');
+    await expect(shaddaInStack).toHaveCount(1);
+    await expect(kasraInStack).toHaveCount(1);
+    const shaddaStackBox=await shaddaInStack.boundingBox();
+    const kasraStackBox=await kasraInStack.boundingBox();
+    const letterGlyphBox=await page.locator('.piece-type-letter .foam-piece-glyph').boundingBox();
+    expect(shaddaStackBox).not.toBeNull();
+    expect(kasraStackBox).not.toBeNull();
+    expect(letterGlyphBox).not.toBeNull();
+    expect(kasraStackBox.y).toBeGreaterThan(shaddaStackBox.y);
+    expect(kasraStackBox.y + kasraStackBox.height / 2).toBeLessThan(letterGlyphBox.y + letterGlyphBox.height / 2);
+
+    // Attached marks must sit close to the letter instead of using the old large offsets.
+    const stackTopRatio=await stack.evaluate(el => {
+      const top=Math.abs(Number.parseFloat(getComputedStyle(el).top));
+      const font=Number.parseFloat(getComputedStyle(el.parentElement).fontSize);
+      return top/font;
+    });
+    expect(stackTopRatio).toBeLessThan(0.5);
 
     // Attached and free haraka should use the same visual scale at 100%.
     await page.locator('#harakaModeFree').click();
