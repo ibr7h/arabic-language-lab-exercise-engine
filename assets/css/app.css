@@ -1082,3 +1082,65 @@ body[data-platform="desktop"] .free-foam-piece:focus-visible {
 }
 body[data-platform="webos"] .free-foam-piece { transition: transform .12s ease, outline .12s ease; }
 body[data-platform="webos"] .free-foam-piece:focus { z-index:20; }
+
+
+/* ================================================================
+   Piece visual frame v2
+   The frame is a separate visual layer, so legacy .foam-glyph
+   border/background rules cannot suppress it and calibration/layout
+   coordinates remain untouched.
+   ================================================================ */
+.free-foam-piece {
+  --piece-frame-pad-x: .12em;
+  --piece-frame-pad-y: .10em;
+}
+.free-foam-piece.piece-type-haraka {
+  --piece-frame-pad-x: .28em;
+  --piece-frame-pad-y: .36em;
+  background: transparent !important;
+  border: 0 !important;
+}
+.free-foam-piece::before {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--piece-frame-pad-x));
+  right: calc(-1 * var(--piece-frame-pad-x));
+  top: calc(-1 * var(--piece-frame-pad-y));
+  bottom: calc(-1 * var(--piece-frame-pad-y));
+  border: 1px solid rgba(100,116,139,.38);
+  border-radius: .18em;
+  background: transparent;
+  pointer-events: none;
+  box-sizing: border-box;
+  z-index: 0;
+}
+.free-foam-piece > .foam-piece-glyph,
+.free-foam-piece > .piece-delete-btn {
+  position: relative;
+  z-index: 1;
+}
+
+/* Hide ordinary frames only. Selected pieces always keep a clear frame. */
+#boardCanvas.piece-frames-hidden .free-foam-piece:not(.is-selected)::before {
+  border-color: transparent !important;
+}
+#boardCanvas .free-foam-piece.is-selected {
+  outline: none !important;
+  background: transparent !important;
+}
+#boardCanvas .free-foam-piece.is-selected::before {
+  border-width: 3px;
+  border-color: #0f766e;
+  box-shadow: 0 0 0 2px rgba(15,118,110,.10);
+}
+#boardCanvas .free-foam-piece.is-word-selected::before { border-color:#7c3aed; }
+#boardCanvas .free-foam-piece.is-letter-selected::before { border-color:#f59e0b; }
+#boardCanvas .free-foam-piece.is-multi-selected::before { border-color:#0f766e; }
+
+/* The free haraka frame deliberately surrounds the SVG overflow area.
+   No positioning/calibration variable is changed here. */
+.free-foam-piece.piece-type-haraka .free-haraka-piece-glyph,
+.free-foam-piece.piece-type-haraka .free-haraka-native,
+.free-foam-piece.piece-type-haraka .free-haraka-native svg {
+  overflow: visible !important;
+}
