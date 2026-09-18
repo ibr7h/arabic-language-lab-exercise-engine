@@ -12,7 +12,7 @@ test.describe('Arabic Language Lab board E2E', () => {
   test('visible build badge identifies the loaded app version', async ({ page }) => {
     const badge=page.locator('#appVersionBadge');
     await expect(badge).toBeVisible();
-    await expect(badge).toHaveText('Version v12.2 • Build 2026-09-18');
+    await expect(badge).toHaveText('Version v12.3 • Build 2026-09-18');
   });
 
   test('lam-alif, free haraka, resize, keyboard movement, phrase spaces', async ({ page }) => {
@@ -121,6 +121,9 @@ test.describe('Arabic Language Lab board E2E', () => {
     expect(letterGlyphBox).not.toBeNull();
     expect(kasraStackBox.y).toBeGreaterThan(shaddaStackBox.y);
     expect(kasraStackBox.y + kasraStackBox.height / 2).toBeLessThan(letterGlyphBox.y + letterGlyphBox.height / 2);
+    const stackCenterGap=(kasraStackBox.y+kasraStackBox.height/2)-(shaddaStackBox.y+shaddaStackBox.height/2);
+    const letterFontSize=await page.locator('.piece-type-letter').evaluate(el => Number.parseFloat(getComputedStyle(el).fontSize));
+    expect(stackCenterGap/letterFontSize).toBeLessThan(0.18);
 
     // Attached marks must sit close to the letter instead of using the old large offsets.
     const stackTopRatio=await stack.evaluate(el => {
@@ -129,6 +132,12 @@ test.describe('Arabic Language Lab board E2E', () => {
       return top/font;
     });
     expect(stackTopRatio).toBeLessThan(0.5);
+
+    // Dammatan uses the custom compact two-damma renderer, not the platform default glyph.
+    await page.locator('#harakaModeFree').click();
+    await page.locator('#harakatButtonsRow button[title="تنوين ضم"]').click();
+    const dammatanPiece=page.locator('.piece-type-haraka').last();
+    await expect(dammatanPiece.locator('.dammatan-double-svg .dammatan-lobe')).toHaveCount(2);
 
     // Attached and free haraka should use the same visual scale at 100%.
     await page.locator('#harakaModeFree').click();
