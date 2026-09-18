@@ -55,6 +55,7 @@ test.describe('Arabic Language Lab board E2E', () => {
     await page.locator('button[data-onclick="boardManager.clearBoard()"]').click();
 
     // Direct lam-alif pieces must be available without typing a completed word.
+    await expect(page.locator('button[data-lam-alif]')).toHaveCount(8);
     await page.locator('button[data-lam-alif="لا"]').click();
     await expect(page.locator('.piece-type-ligature')).toHaveCount(1);
     await expect(page.locator('.piece-type-ligature')).toContainText('لا');
@@ -81,11 +82,21 @@ test.describe('Arabic Language Lab board E2E', () => {
     await page.locator('#harakatButtonsRow button[title="كسرة"]').click();
     const kasra=page.locator('.piece-type-letter .foam-mark-overlay[data-haraka="ِ"]');
     await expect(kasra).toHaveAttribute('style', /--mark-anchor:58%/);
+    const attachedKasraBox=await kasra.boundingBox();
 
     // With shadda, kasra must move into the stacked-above-letter geometry.
     await page.locator('#harakatButtonsRow button[title="شدة"]').click();
     await expect(page.locator('.piece-type-letter .mark-kasra-with-shadda[data-haraka="ِ"]')).toHaveCount(1);
     await expect(page.locator('.piece-type-letter .mark-shadda[data-haraka="ّ"]')).toHaveCount(1);
+
+    // Attached and free haraka should use the same visual scale at 100%.
+    await page.locator('#harakaModeFree').click();
+    await page.locator('#harakatButtonsRow button[title="كسرة"]').click();
+    const freeKasraBox=await page.locator('.piece-type-haraka .free-haraka-piece-glyph').last().boundingBox();
+    expect(attachedKasraBox).not.toBeNull();
+    expect(freeKasraBox).not.toBeNull();
+    const scaleDifference=Math.abs(attachedKasraBox.width-freeKasraBox.width)/freeKasraBox.width;
+    expect(scaleDifference).toBeLessThan(0.18);
 
     expect(page.__errors).toEqual([]);
   });
