@@ -14,7 +14,7 @@ function esc(mark){
 export function nativeHarakaSvg(mark){
   const m=String(mark||'');
   if(!TOP_MARKS.has(m)&&!BOTTOM_MARKS.has(m)) return '';
-  const font="'Geeza Pro','SF Arabic','Noto Naskh Arabic','Traditional Arabic',serif";
+  const font="var(--arabic-font-family, 'Geeza Pro', 'SF Arabic', 'Noto Naskh Arabic', 'Traditional Arabic', serif)";
 
   // Dammatan is deliberately drawn as two compact dammas. Do not delegate
   // this mark to the platform font: Safari/Chrome can choose very different
