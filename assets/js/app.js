@@ -77,6 +77,22 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
     // ترتيب تدريس الحروف في كتاب لغتي للصف الأول: الوحدات 1–5.
     const LETTER_ORDER_LUGHATI = ['م','ب','ل','د','ن','ر','ص','ف','س','ق','ت','ح','ا','ط','ز','و','ج','ش','ض','ع','ك','خ','ي','ذ','ه','ث','غ','ظ'];
     const PRIMARY_HARAKAT = new Set(['َ','ُ','ِ','ْ','ً','ٌ','ٍ']);
+    const HARAKA_CALIBRATION_DEFAULTS = Object.freeze({
+      size: 100,
+      topGap: 0.34,
+      bottomGap: 0.14,
+      shaddaKasraGap: 16,
+      dammatanSize: 100,
+      dammatanGap: 10
+    });
+    const HARAKA_CALIBRATION_LIMITS = Object.freeze({
+      size: [60, 160],
+      topGap: [0, 1],
+      bottomGap: [0, 0.8],
+      shaddaKasraGap: [0, 45],
+      dammatanSize: [60, 150],
+      dammatanGap: [2, 24]
+    });
     const boardPlatformAdapter = createPlatformAdapter(detectPlatformProfile());
 
     /* ====================================================================
@@ -100,8 +116,11 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
       longPressMs: 460,
       wordCounter: 0,
       harakaPlacementMode: 'attached',
+      harakaCalibrationStorageKey: 'arabic-language-lab.haraka-calibration.v1',
+      harakaCalibration: { ...HARAKA_CALIBRATION_DEFAULTS },
 
       init() {
+        this.loadHarakaCalibration();
         this.populateQuickLetterSelect();
         this.renderHarakat();
         this.renderLamAlifToolbar();
@@ -112,6 +131,122 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
         this.restoredFromStorage = this.restorePersisted();
         if (!this.restoredFromStorage) this.loadPresetWord('صَالِحٌ');
         else this.renderBoard();
+      },
+
+      normalizeHarakaCalibration(input = {}) {
+        const next = { ...HARAKA_CALIBRATION_DEFAULTS };
+        for (const key of Object.keys(next)) {
+          const n = Number(input[key]);
+          if (!Number.isFinite(n)) continue;
+          const [min, max] = HARAKA_CALIBRATION_LIMITS[key];
+          next[key] = Math.max(min, Math.min(max, n));
+        }
+        return next;
+      },
+
+      loadHarakaCalibration() {
+        let stored = null;
+        try {
+          stored = typeof localStorage !== 'undefined'
+            ? JSON.parse(localStorage.getItem(this.harakaCalibrationStorageKey) || 'null')
+            : null;
+        } catch (_) {
+          stored = null;
+        }
+        this.harakaCalibration = this.normalizeHarakaCalibration(stored || HARAKA_CALIBRATION_DEFAULTS);
+        this.applyHarakaCalibration();
+        this.syncHarakaCalibrationUI();
+      },
+
+      saveHarakaCalibration() {
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(this.harakaCalibrationStorageKey, JSON.stringify(this.harakaCalibration));
+          }
+        } catch (_) {}
+      },
+
+      applyHarakaCalibration() {
+        if (typeof document === 'undefined') return;
+        const root = document.documentElement;
+        const v = this.harakaCalibration;
+        root.style.setProperty('--haraka-attached-scale', String(v.size / 100));
+        root.style.setProperty('--haraka-top-offset', `${-Math.abs(v.topGap)}em`);
+        root.style.setProperty('--haraka-bottom-offset', `${-Math.abs(v.bottomGap)}em`);
+        root.style.setProperty('--haraka-stack-kasra-top', `${v.shaddaKasraGap}%`);
+        root.style.setProperty('--dammatan-scale', String(v.dammatanSize / 100));
+        root.style.setProperty('--dammatan-lobe-a-x', `${-(v.dammatanGap / 2)}px`);
+        root.style.setProperty('--dammatan-lobe-b-x', `${v.dammatanGap / 2}px`);
+      },
+
+      syncHarakaCalibrationUI() {
+        if (typeof document === 'undefined') return;
+        const v = this.harakaCalibration;
+        const fields = {
+          size: ['calHarakaSize','calHarakaSizeOut'],
+          topGap: ['calHarakaTopGap','calHarakaTopGapOut'],
+          bottomGap: ['calHarakaBottomGap','calHarakaBottomGapOut'],
+          shaddaKasraGap: ['calShaddaKasraGap','calShaddaKasraGapOut'],
+          dammatanSize: ['calDammatanSize','calDammatanSizeOut'],
+          dammatanGap: ['calDammatanGap','calDammatanGapOut']
+        };
+        for (const [key, ids] of Object.entries(fields)) {
+          const input = document.getElementById(ids[0]);
+          const output = document.getElementById(ids[1]);
+          if (input) input.value = String(v[key]);
+          if (output) output.textContent = String(v[key]);
+        }
+        const summary = document.getElementById('harakaCalibrationSummary');
+        if (summary) summary.textContent = this.getHarakaCalibrationSummary();
+      },
+
+      getHarakaCalibrationSummary() {
+        const v = this.harakaCalibration;
+        return `size=${v.size} | top=${v.topGap} | bottom=${v.bottomGap} | shaddaKasra=${v.shaddaKasraGap} | dammatanSize=${v.dammatanSize} | dammatanGap=${v.dammatanGap}`;
+      },
+
+      updateHarakaCalibration(key, rawValue) {
+        if (!(key in HARAKA_CALIBRATION_DEFAULTS)) return;
+        const n = Number(rawValue);
+        if (!Number.isFinite(n)) return;
+        const [min, max] = HARAKA_CALIBRATION_LIMITS[key];
+        this.harakaCalibration[key] = Math.max(min, Math.min(max, n));
+        this.applyHarakaCalibration();
+        this.syncHarakaCalibrationUI();
+        this.saveHarakaCalibration();
+      },
+
+      resetHarakaCalibration() {
+        this.harakaCalibration = { ...HARAKA_CALIBRATION_DEFAULTS };
+        this.applyHarakaCalibration();
+        this.syncHarakaCalibrationUI();
+        this.saveHarakaCalibration();
+        app.showToast('تمت إعادة قيم معايرة الحركات');
+      },
+
+      toggleHarakaCalibrationPanel() {
+        const panel = document.getElementById('harakaCalibrationPanel');
+        if (!panel) return;
+        panel.classList.toggle('hidden');
+        this.syncHarakaCalibrationUI();
+      },
+
+      async copyHarakaCalibration() {
+        const text = this.getHarakaCalibrationSummary();
+        try {
+          await navigator.clipboard.writeText(text);
+          app.showToast('تم نسخ قيم معايرة الحركات');
+        } catch (_) {
+          const summary = document.getElementById('harakaCalibrationSummary');
+          if (summary) {
+            const range = document.createRange();
+            range.selectNodeContents(summary);
+            const selection = window.getSelection();
+            selection?.removeAllRanges();
+            selection?.addRange(range);
+          }
+          app.showToast('القيم محددة الآن؛ انسخها يدويًا');
+        }
       },
 
       checkpoint(label = '') {
