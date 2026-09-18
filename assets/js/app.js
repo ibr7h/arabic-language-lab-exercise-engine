@@ -8,7 +8,7 @@ import { createPlatformAdapter } from './core/platform-adapter.js';
 import { BOARD_CAPABILITIES, pieceCan, createHarakaPiece as createCanonicalHarakaPiece, createSpacePiece as createCanonicalSpacePiece, createLigaturePiece as createCanonicalLigaturePiece, fromLegacyLetterPiece } from './core/board-piece.js';
 import { ArabicIdentity } from './core/arabic-identity.js';
 import { createLamAlifLigature, mergeLamAlifUnits, composeLigatureText } from './core/ligature-engine.js';
-import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.js';
+import { renderAttachedHaraka, renderShaddaKasraStack, renderFreeHaraka } from './core/harakat-renderer.js';
 import { BoardState, saveBoardState, loadBoardState } from './core/board-state.js';
 import { BoardHistory } from './core/board-history.js';
 import { BOARD_COMMANDS, applyBoardCommand } from './core/board-commands.js';
@@ -384,11 +384,42 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
       renderMarkOverlays(item) {
         const attachments = this.getMarkAttachments(item);
         if (!attachments.length) return '';
-        return attachments.map(entry => {
-          const hasShadda = attachments.some(other => other.componentIndex === entry.componentIndex && other.mark === 'ّ');
-          const anchor = this.getMarkAnchor(item, entry.mark, entry.componentIndex);
-          return renderAttachedHaraka(entry.mark, { anchor, withShadda: hasShadda });
-        }).join('');
+
+        const groups = new Map();
+        attachments.forEach(entry => {
+          const key = Number(entry.componentIndex) || 0;
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push(entry.mark);
+        });
+
+        const html = [];
+        for (const [componentIndex, marks] of groups.entries()) {
+          const hasShadda = marks.includes('ّ');
+          const hasKasra = marks.includes('ِ');
+
+          // Render شدة + كسرة as one explicit visual stack so the font cannot
+          // push the kasra back underneath the base letter.
+          if (hasShadda && hasKasra) {
+            const anchor = this.getMarkAnchor(item, 'ّ', componentIndex);
+            html.push(renderShaddaKasraStack({ anchor }));
+            for (const mark of marks) {
+              if (mark === 'ّ' || mark === 'ِ') continue;
+              html.push(renderAttachedHaraka(mark, {
+                anchor: this.getMarkAnchor(item, mark, componentIndex),
+                withShadda: true
+              }));
+            }
+            continue;
+          }
+
+          for (const mark of marks) {
+            html.push(renderAttachedHaraka(mark, {
+              anchor: this.getMarkAnchor(item, mark, componentIndex),
+              withShadda: hasShadda
+            }));
+          }
+        }
+        return html.join('');
       },
 
       composeGlyphWithMarks(glyph, marks = []) {
