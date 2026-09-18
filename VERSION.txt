@@ -1,4 +1,4 @@
-Arabic Language Lab — Refactor v5
-Canonical Arabic + Board State + Free Harakat + Multi-Platform
-2026-09-18
+Arabic Language Lab — v12.1
+Haraka carrier hotfix + visible build/version badge
+Build date: 2026-09-18
 Baseline: baseline-before-refactor-2026-09-18 @ 6f1b2abcf72e6828df84ffdaa84440059fed75bd
