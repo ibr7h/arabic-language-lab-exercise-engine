@@ -798,10 +798,10 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
 .foam-mark-overlay.mark-bottom { bottom:-.14em !important; }
 
 .foam-mark-overlay.mark-stack-shadda-kasra {
-  top:-.38em !important;
+  top:-.30em !important;
   bottom:auto !important;
-  width:1.28em !important;
-  height:.72em !important;
+  width:1.22em !important;
+  height:.54em !important;
 }
 .mark-stack-shadda-kasra .stack-shadda,
 .mark-stack-shadda-kasra .stack-kasra {
@@ -813,11 +813,11 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
 }
 .mark-stack-shadda-kasra .stack-shadda {
   top:0;
-  height:62%;
+  height:72%;
 }
 .mark-stack-shadda-kasra .stack-kasra {
-  top:34%;
-  height:62%;
+  top:16%;
+  height:72%;
 }
 .mark-stack-shadda-kasra svg {
   width:100%;
