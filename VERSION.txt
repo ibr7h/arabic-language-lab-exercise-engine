@@ -1,4 +1,4 @@
-Arabic Language Lab — v12.6
-Piece frame hotfix: real visual toggle, persistent selection frame, expanded free-haraka frame without changing calibration geometry
-Build date: 2026-09-18
+Arabic Language Lab — v12.7
+Independent letter drag fix: preserve single-piece selection and persist final drop coordinates immediately
+Build date: 2026-09-19
 Baseline: baseline-before-refactor-2026-09-18 @ 6f1b2abcf72e6828df84ffdaa84440059fed75bd
