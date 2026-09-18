@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v12.4-2026-09-18-live-haraka-calibration';
+const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v12.5-2026-09-18-board-visual-system';
 const CORE = [
   './', './index.html', './manifest.webmanifest', './LICENSE.txt',
   './assets/css/tailwind.css', './assets/css/app.css',
