@@ -42,12 +42,16 @@ const ligature = createLigaturePiece({
   id: 'ligature_1',
   logicalText: 'لآ',
   components: ['ل', 'آ'],
+  baseText: 'لآ',
   displayGlyph: 'لآ',
+  markAttachments: [{ mark: 'َ', componentIndex: 0 }],
   x: 50,
   y: 60
 });
 assert.equal(ligature.type, BOARD_PIECE_TYPES.LIGATURE);
 assert.deepEqual(ligature.components, ['ل', 'آ']);
+assert.equal(ligature.baseText, 'لآ');
+assert.deepEqual(ligature.markAttachments, [{ mark: 'َ', componentIndex: 0 }]);
 assert.equal(ligature.logicalText, 'لآ');
 assert.equal(validateBoardPiece(ligature).valid, true);
 
