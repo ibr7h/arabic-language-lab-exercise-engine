@@ -16,6 +16,13 @@ for (const mark of ['َ','ُ','ِ','ْ','ّ','ً','ٌ','ٍ']) {
   assert.ok(!free.includes('ـ'));
 }
 
+
+const dammatan=nativeHarakaSvg('ٌ');
+assert.ok(dammatan.includes('dammatan-double-svg'),'dammatan must use the dedicated two-damma renderer');
+assert.equal((dammatan.match(/class="dammatan-lobe /g)||[]).length,2,'dammatan must contain exactly two damma lobes');
+assert.ok(dammatan.includes('x="27"')&&dammatan.includes('x="37"'),'dammatan lobes must remain compact and side-by-side');
+assert.ok(!dammatan.includes('ـ'),'dammatan renderer must not use a visible tatweel carrier');
+
 const stack=renderShaddaKasraStack({anchor:58});
 assert.ok(stack.includes('mark-stack-shadda-kasra'));
 assert.ok(stack.includes('stack-shadda'));
