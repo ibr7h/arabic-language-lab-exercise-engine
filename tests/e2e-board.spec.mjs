@@ -12,7 +12,7 @@ test.describe('Arabic Language Lab board E2E', () => {
   test('visible build badge identifies the loaded app version', async ({ page }) => {
     const badge=page.locator('#appVersionBadge');
     await expect(badge).toBeVisible();
-    await expect(badge).toHaveText('Version v12.5 • Build 2026-09-18');
+    await expect(badge).toHaveText('Version v12.6 • Build 2026-09-18');
   });
 
   test('live haraka calibration supports global and selected-piece scopes', async ({ page }) => {
@@ -73,16 +73,57 @@ test.describe('Arabic Language Lab board E2E', () => {
   });
 
   test('visual controls preserve selection, phrase spaces, modes and font propagation', async ({ page }) => {
-    // Piece frame visibility is independent from selection.
+    // Piece frame visibility must change visually, while selection remains visible.
     await page.locator('#exerciseModeFree').click();
     await page.locator('button[data-onclick="boardManager.clearBoard()"]').click();
     await page.locator('#harakaModeFree').click();
     await page.locator('#harakatButtonsRow button[title="فتحة"]').click();
-    const freeHaraka=page.locator('.piece-type-haraka').first();
-    await expect(freeHaraka).toHaveClass(/is-selected/);
+    await page.locator('#harakatButtonsRow button[title="ضمة"]').click();
+
+    const firstHaraka=page.locator('.piece-type-haraka').first();
+    const selectedHaraka=page.locator('.piece-type-haraka').last();
+    await expect(selectedHaraka).toHaveClass(/is-selected/);
+
+    const visibleFrame=await firstHaraka.evaluate(el => {
+      const s=getComputedStyle(el,'::before');
+      return { width:s.borderTopWidth, color:s.borderTopColor };
+    });
+    expect(Number.parseFloat(visibleFrame.width)).toBeGreaterThan(0);
+    expect(visibleFrame.color).not.toBe('rgba(0, 0, 0, 0)');
+
     await page.locator('#pieceFrameToggleBtn').click();
     await expect(page.locator('#boardCanvas')).toHaveClass(/piece-frames-hidden/);
-    await expect(freeHaraka).toHaveClass(/is-selected/);
+    await expect(page.locator('#pieceFrameToggleBtn')).toHaveAttribute('aria-pressed','false');
+
+    const hiddenFrame=await firstHaraka.evaluate(el => getComputedStyle(el,'::before').borderTopColor);
+    expect(hiddenFrame).toBe('rgba(0, 0, 0, 0)');
+
+    const selectedFrame=await selectedHaraka.evaluate(el => {
+      const s=getComputedStyle(el,'::before');
+      return { width:s.borderTopWidth, color:s.borderTopColor };
+    });
+    expect(Number.parseFloat(selectedFrame.width)).toBeGreaterThanOrEqual(3);
+    expect(selectedFrame.color).not.toBe('rgba(0, 0, 0, 0)');
+
+    // The free-haraka SVG box must sit inside the expanded visual frame.
+    const geometry=await selectedHaraka.evaluate(el => {
+      const piece=el.getBoundingClientRect();
+      const svg=el.querySelector('svg')?.getBoundingClientRect();
+      const s=getComputedStyle(el);
+      const font=Number.parseFloat(s.fontSize);
+      const padX=Number.parseFloat(s.getPropertyValue('--piece-frame-pad-x'))*font;
+      const padY=Number.parseFloat(s.getPropertyValue('--piece-frame-pad-y'))*font;
+      return svg ? {
+        left:piece.left-padX, right:piece.right+padX,
+        top:piece.top-padY, bottom:piece.bottom+padY,
+        svgLeft:svg.left, svgRight:svg.right, svgTop:svg.top, svgBottom:svg.bottom
+      } : null;
+    });
+    expect(geometry).not.toBeNull();
+    expect(geometry.svgLeft).toBeGreaterThanOrEqual(geometry.left-1);
+    expect(geometry.svgRight).toBeLessThanOrEqual(geometry.right+1);
+    expect(geometry.svgTop).toBeGreaterThanOrEqual(geometry.top-1);
+    expect(geometry.svgBottom).toBeLessThanOrEqual(geometry.bottom+1);
 
     // Completed phrases preserve an explicit visual gap between words.
     await page.locator('#exerciseModeCompleted').click();
