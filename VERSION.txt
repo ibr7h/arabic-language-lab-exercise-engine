@@ -1,4 +1,4 @@
-Arabic Language Lab — v12.3
-Compact custom dammatan + tighter shadda/kasra stack
+Arabic Language Lab — v12.4
+Live haraka calibration panel for size, letter spacing, shadda/kasra gap and dammatan geometry
 Build date: 2026-09-18
 Baseline: baseline-before-refactor-2026-09-18 @ 6f1b2abcf72e6828df84ffdaa84440059fed75bd
