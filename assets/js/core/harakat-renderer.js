@@ -1,5 +1,5 @@
-// Unified native-Arabic haraka renderer.
-// Free and attached marks share the same native SVG; CSS controls placement only.
+// Unified Arabic haraka renderer.
+// Free and attached marks render without a visible tatweel/carrier.
 const TOP_MARKS = new Set(['َ','ُ','ْ','ّ','ً','ٌ']);
 const BOTTOM_MARKS = new Set(['ِ','ٍ']);
 const LABELS = Object.freeze({'َ':'فتحة','ُ':'ضمة','ِ':'كسرة','ْ':'سكون','ّ':'شدة','ً':'تنوين فتح','ٌ':'تنوين ضم','ٍ':'تنوين كسر'});
@@ -14,9 +14,12 @@ export function nativeHarakaSvg(mark){
   const m=String(mark||'');
   if(!TOP_MARKS.has(m)&&!BOTTOM_MARKS.has(m)) return '';
   const font="'Geeza Pro','SF Arabic','Noto Naskh Arabic','Traditional Arabic',serif";
-  if(m==='ٌ') return `<svg viewBox="0 0 64 34" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet"><text x="25" y="58" text-anchor="middle" direction="rtl" font-size="66" fill="currentColor" style="font-family:${font}">ـُ</text><text x="39" y="58" text-anchor="middle" direction="rtl" font-size="66" fill="currentColor" style="font-family:${font}">ـُ</text></svg>`;
-  const y=TOP_MARKS.has(m)?58:-7, size=m==='ّ'?64:66;
-  return `<svg viewBox="0 0 64 34" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet"><text x="32" y="${y}" text-anchor="middle" direction="rtl" font-size="${size}" fill="currentColor" style="font-family:${font}">ـ${esc(m)}</text></svg>`;
+  const size=m==='ّ'?66:68;
+  const y=TOP_MARKS.has(m)?26:28;
+
+  // Important: render the combining mark itself only.
+  // Do NOT prepend Arabic tatweel (ـ), because some browsers display it as a visible dash.
+  return `<svg viewBox="0 0 64 34" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet"><text x="32" y="${y}" text-anchor="middle" dominant-baseline="middle" direction="rtl" font-size="${size}" fill="currentColor" style="font-family:${font}">${esc(m)}</text></svg>`;
 }
 
 export function renderAttachedHaraka(mark,{anchor=50,withShadda=false}={}){
