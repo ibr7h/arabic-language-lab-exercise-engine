@@ -362,6 +362,7 @@
                 <button id="harakaModeFree" type="button" class="haraka-mode-btn" data-onclick="boardManager.setHarakaPlacementMode('free')">حركة حرة</button>
                 <button type="button" class="haraka-mode-btn haraka-link-btn" data-onclick="boardManager.attachSelectedHaraka()">🔗 ربط بالأقرب</button>
                 <button type="button" class="haraka-mode-btn haraka-link-btn" data-onclick="boardManager.detachSelectedHaraka()">🔓 فصل من الحرف</button>
+                <button id="pieceFrameToggleBtn" type="button" class="haraka-mode-btn haraka-frame-btn active" data-onclick="boardManager.togglePieceFrames()">▣ إطار القطع: ظاهر</button>
               </div>
               <div id="harakaTargetLabel" class="haraka-target-label">اختاري حرفًا لتغيير حركته</div>
               <div class="flex flex-wrap gap-2 justify-center items-center py-1" id="harakatButtonsRow">
@@ -371,44 +372,81 @@
               <div class="haraka-calibration-wrap">
                 <button id="harakaCalibrationToggle" type="button" class="haraka-calibration-toggle" data-onclick="boardManager.toggleHarakaCalibrationPanel()">⚙️ معايرة الحركات</button>
                 <div id="harakaCalibrationPanel" class="haraka-calibration-panel hidden" aria-label="معايرة حجم وموضع الحركات">
+                  <div class="haraka-calibration-head">
+                    <label>
+                      <span>نطاق المعايرة</span>
+                      <select id="harakaCalibrationScope" data-onchange="boardManager.setHarakaCalibrationScope(this.value)">
+                        <option value="global">عام — كل الحركات</option>
+                        <option value="selected">القطعة المحددة فقط</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>الشدة + الكسرة</span>
+                      <select id="shaddaKasraMode" data-onchange="boardManager.setShaddaKasraMode(this.value)">
+                        <option value="school">تعليمي: الكسرة تحت الشدة</option>
+                        <option value="uthmani">عثماني: الكسرة تحت الحرف</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div id="harakaCalibrationScopeHint" class="haraka-calibration-scope-hint">تعديل القيم الافتراضية العامة.</div>
                   <div class="haraka-calibration-grid">
                     <label class="haraka-calibration-control">
                       <span>حجم الحركة المرتبطة (%)</span>
-                      <input id="calHarakaSize" type="range" min="60" max="160" step="2" value="100" data-oninput="boardManager.updateHarakaCalibration('size', this.value)">
+                      <input id="calHarakaSize" type="range" min="50" max="190" step="2" value="100" data-oninput="boardManager.updateHarakaCalibration('size', this.value)">
                       <output id="calHarakaSizeOut">100</output>
                     </label>
                     <label class="haraka-calibration-control">
+                      <span>الإزاحة الأفقية (px)</span>
+                      <input id="calHarakaXOffset" type="range" min="-40" max="40" step="1" value="0" data-oninput="boardManager.updateHarakaCalibration('xOffset', this.value)">
+                      <output id="calHarakaXOffsetOut">0</output>
+                    </label>
+                    <label class="haraka-calibration-control">
                       <span>بعد الحركة العليا عن الحرف (em)</span>
-                      <input id="calHarakaTopGap" type="range" min="0" max="1" step="0.02" value="0.34" data-oninput="boardManager.updateHarakaCalibration('topGap', this.value)">
+                      <input id="calHarakaTopGap" type="range" min="0" max="1.2" step="0.02" value="0.34" data-oninput="boardManager.updateHarakaCalibration('topGap', this.value)">
                       <output id="calHarakaTopGapOut">0.34</output>
                     </label>
                     <label class="haraka-calibration-control">
                       <span>بعد الكسرة عن الحرف (em)</span>
-                      <input id="calHarakaBottomGap" type="range" min="0" max="0.8" step="0.02" value="0.14" data-oninput="boardManager.updateHarakaCalibration('bottomGap', this.value)">
+                      <input id="calHarakaBottomGap" type="range" min="0" max="1" step="0.02" value="0.14" data-oninput="boardManager.updateHarakaCalibration('bottomGap', this.value)">
                       <output id="calHarakaBottomGapOut">0.14</output>
                     </label>
                     <label class="haraka-calibration-control">
+                      <span>موضع مجموعة الشدة+الكسرة (em)</span>
+                      <input id="calShaddaStackTop" type="range" min="0" max="1" step="0.02" value="0.30" data-oninput="boardManager.updateHarakaCalibration('shaddaStackTop', this.value)">
+                      <output id="calShaddaStackTopOut">0.30</output>
+                    </label>
+                    <label class="haraka-calibration-control">
                       <span>تباعد الشدة والكسرة (%)</span>
-                      <input id="calShaddaKasraGap" type="range" min="0" max="45" step="1" value="16" data-oninput="boardManager.updateHarakaCalibration('shaddaKasraGap', this.value)">
+                      <input id="calShaddaKasraGap" type="range" min="0" max="60" step="1" value="16" data-oninput="boardManager.updateHarakaCalibration('shaddaKasraGap', this.value)">
                       <output id="calShaddaKasraGapOut">16</output>
                     </label>
                     <label class="haraka-calibration-control">
                       <span>حجم تنوين الضم (%)</span>
-                      <input id="calDammatanSize" type="range" min="60" max="150" step="2" value="100" data-oninput="boardManager.updateHarakaCalibration('dammatanSize', this.value)">
+                      <input id="calDammatanSize" type="range" min="40" max="180" step="2" value="100" data-oninput="boardManager.updateHarakaCalibration('dammatanSize', this.value)">
                       <output id="calDammatanSizeOut">100</output>
                     </label>
                     <label class="haraka-calibration-control">
                       <span>المسافة بين ضمتي التنوين (px)</span>
-                      <input id="calDammatanGap" type="range" min="2" max="24" step="1" value="10" data-oninput="boardManager.updateHarakaCalibration('dammatanGap', this.value)">
+                      <input id="calDammatanGap" type="range" min="0" max="32" step="1" value="10" data-oninput="boardManager.updateHarakaCalibration('dammatanGap', this.value)">
                       <output id="calDammatanGapOut">10</output>
+                    </label>
+                    <label class="haraka-calibration-control">
+                      <span>إزاحة تنوين الضم أفقيًا (px)</span>
+                      <input id="calDammatanX" type="range" min="-35" max="35" step="1" value="0" data-oninput="boardManager.updateHarakaCalibration('dammatanX', this.value)">
+                      <output id="calDammatanXOut">0</output>
+                    </label>
+                    <label class="haraka-calibration-control">
+                      <span>إزاحة تنوين الضم رأسيًا (px)</span>
+                      <input id="calDammatanY" type="range" min="-35" max="35" step="1" value="0" data-oninput="boardManager.updateHarakaCalibration('dammatanY', this.value)">
+                      <output id="calDammatanYOut">0</output>
                     </label>
                   </div>
                   <div class="haraka-calibration-actions">
-                    <code id="harakaCalibrationSummary" dir="ltr">size=100 | top=0.34 | bottom=0.14 | shaddaKasra=16 | dammatanSize=100 | dammatanGap=10</code>
+                    <code id="harakaCalibrationSummary" dir="ltr">scope=global | size=100 | x=0 | top=0.34 | bottom=0.14 | stackTop=0.30 | shaddaKasra=16 | dammatanSize=100 | dammatanGap=10 | dammatanX=0 | dammatanY=0</code>
                     <button type="button" data-onclick="boardManager.copyHarakaCalibration()">نسخ القيم</button>
                     <button type="button" data-onclick="boardManager.resetHarakaCalibration()">إعادة الضبط</button>
                   </div>
-                  <p class="haraka-calibration-note">عدّل القيم وأرسل لي سطر المعايرة الظاهر أعلاه. التغيير يظهر مباشرة على اللوحة ويُحفظ على هذا الجهاز فقط.</p>
+                  <p class="haraka-calibration-note">في نطاق «القطعة المحددة» تستطيع ضبط نفس الحركة بشكل مختلف في كل كلمة. الإعدادات العامة تبقى محفوظة ولا تتأثر.</p>
                 </div>
               </div>
 
