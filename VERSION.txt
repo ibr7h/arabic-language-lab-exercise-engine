@@ -1,4 +1,4 @@
-Arabic Language Lab — v12.4
-Live haraka calibration panel for size, letter spacing, shadda/kasra gap and dammatan geometry
+Arabic Language Lab — v12.5
+Board visual system: frame visibility, per-piece haraka calibration, school/Uthmani shadda-kasra mode, phrase spaces, unified font propagation
 Build date: 2026-09-18
 Baseline: baseline-before-refactor-2026-09-18 @ 6f1b2abcf72e6828df84ffdaa84440059fed75bd
