@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v12.5-2026-09-18-board-visual-system';
+const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v12.6-2026-09-18-piece-frame-hotfix';
 const CORE = [
   './', './index.html', './manifest.webmanifest', './LICENSE.txt',
   './assets/css/tailwind.css', './assets/css/app.css',
