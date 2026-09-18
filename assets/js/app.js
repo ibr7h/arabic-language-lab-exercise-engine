@@ -2999,6 +2999,8 @@ function parseActionArg(raw, element) {
   const token = raw.trim();
   if (!token) return undefined;
   if (token === 'this.value') return element?.value;
+  if (token === 'true') return true;
+  if (token === 'false') return false;
   if (/^-?\d+(?:\.\d+)?$/.test(token)) return Number(token);
   const quote = token[0];
   if ((quote === "'" || quote === '"') && token[token.length - 1] === quote) {
