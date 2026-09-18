@@ -770,7 +770,7 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
       addHaraka(sym, name) {
         SoundEngine.playSnap();
         SoundEngine.speakArabic(name);
-        if (this.harakaPlacementMode === 'free' && exerciseBoard.mode === 'free') {
+        if (this.harakaPlacementMode === 'free') {
           this.addFreeHaraka(sym, name);
           return;
         }
