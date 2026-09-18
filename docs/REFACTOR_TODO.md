@@ -54,9 +54,9 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ verified · 🔴 block
 
 ## Field correction pass — 2026-09-18
 
-- 🟡 F01 — `لَا`: keep the fatha editable/detachable from the lam–alif ligature.
-- 🟡 F02 — Keep attached haraka visual size consistent with free haraka size.
-- 🟡 F03 — Stack kasra below shadda above the letter when both occur together.
-- 🟡 F04 — Correct the kasra anchor for `إِ`.
-- 🟡 F05 — Expose `لا، ـلا، لأ، ـلأ، لإ، ـلإ، لآ، ـلآ` directly in the board toolbox.
-- 🟡 F06 — Browser regression verification for all field corrections above.
+- ✅ F01 — `لَا`: fatha remains editable/detachable from the lam–alif ligature; browser E2E verified.
+- ✅ F02 — Attached/free haraka visual scale normalized and browser geometry regression verified. Physical iPhone/Safari visual check remains part of T22.
+- ✅ F03 — Kasra stacks below shadda above the letter when both occur together; renderer and browser tests verified.
+- ✅ F04 — Dedicated kasra anchor for `إِ` implemented and browser regression verified; physical iPhone/Safari visual check remains part of T22.
+- ✅ F05 — `لا، ـلا، لأ، ـلأ، لإ، ـلإ، لآ، ـلآ` exposed directly in the board toolbox and E2E verified.
+- ✅ F06 — Unit/regression + Playwright E2E + GitHub Pages deployment all passed on run #98.
