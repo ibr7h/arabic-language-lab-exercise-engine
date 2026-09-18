@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v10-2026-09-18-ui-module';
+const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v11-2026-09-18-haraka-lam-alif-field-fixes';
 const CORE = [
   './', './index.html', './manifest.webmanifest', './LICENSE.txt',
   './assets/css/tailwind.css', './assets/css/app.css',
