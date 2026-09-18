@@ -968,9 +968,19 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
         return visual.map(token=>{
           if(token.type==='ligature'){
             const prevBase=sourceIndex>0?ArabicText.base(units[sourceIndex-1]):'';
-            const lig=createLamAlifLigature(token.components[0],token.components[1],ArabicText,{connectPrev:Boolean(prevBase)&&this.canConnectToNext(prevBase)})||token;
+            const connectPrev=Boolean(prevBase)&&this.canConnectToNext(prevBase);
+            const baseText=token.baseText || (token.components || []).map(value=>ArabicText.base(value)||value).join('');
             sourceIndex+=2;
-            return {type:'ligature',glyph:lig.displayGlyph,baseText:lig.baseText,logicalText:lig.logicalText,components:lig.components,markAttachments:lig.markAttachments,color:prevBase?'glyph-blue':'glyph-red',name:'وصلة لام–ألف'};
+            return {
+              type:'ligature',
+              glyph:`${connectPrev?'ـ':''}${baseText}`,
+              baseText,
+              logicalText:token.logicalText,
+              components:token.components,
+              markAttachments:Array.isArray(token.markAttachments)?token.markAttachments.map(entry=>({...entry})):[],
+              color:connectPrev?'glyph-blue':'glyph-red',
+              name:'وصلة لام–ألف'
+            };
           }
           const unit=token.unit, base=ArabicText.base(unit);
           const prevBase=sourceIndex>0?ArabicText.base(units[sourceIndex-1]):'';
