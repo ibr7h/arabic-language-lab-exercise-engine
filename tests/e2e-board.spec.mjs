@@ -50,6 +50,21 @@ test.describe('Arabic Language Lab board E2E', () => {
     expect(page.__errors).toEqual([]);
   });
 
+  test('free haraka has no visible carrier and always adds as standalone', async ({ page }) => {
+    await page.locator('#exerciseModeCompleted').click();
+    await page.locator('button[data-onclick="boardManager.clearBoard()"]').click();
+    await page.locator('#harakaModeFree').click();
+    await page.locator('#harakatButtonsRow button[title="فتحة"]').click();
+
+    const freeHaraka=page.locator('.piece-type-haraka').first();
+    await expect(freeHaraka).toBeVisible();
+    const html=await freeHaraka.innerHTML();
+    expect(html).not.toContain('ـ');
+    await expect(freeHaraka.locator('[data-haraka="َ"]')).toHaveCount(1);
+
+    expect(page.__errors).toEqual([]);
+  });
+
   test('field corrections: editable lam-alif and attached haraka geometry', async ({ page }) => {
     await page.locator('#exerciseModeFree').click();
     await page.locator('button[data-onclick="boardManager.clearBoard()"]').click();
