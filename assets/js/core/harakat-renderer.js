@@ -1,5 +1,6 @@
 // Unified Arabic haraka renderer.
-// Free and attached marks render without a visible tatweel/carrier.
+// Harakat use an invisible spacing carrier so browsers can shape combining marks
+// without exposing a visible tatweel/dash.
 const TOP_MARKS = new Set(['َ','ُ','ْ','ّ','ً','ٌ']);
 const BOTTOM_MARKS = new Set(['ِ','ٍ']);
 const LABELS = Object.freeze({'َ':'فتحة','ُ':'ضمة','ِ':'كسرة','ْ':'سكون','ّ':'شدة','ً':'تنوين فتح','ٌ':'تنوين ضم','ٍ':'تنوين كسر'});
@@ -15,11 +16,11 @@ export function nativeHarakaSvg(mark){
   if(!TOP_MARKS.has(m)&&!BOTTOM_MARKS.has(m)) return '';
   const font="'Geeza Pro','SF Arabic','Noto Naskh Arabic','Traditional Arabic',serif";
   const size=m==='ّ'?66:68;
-  const y=TOP_MARKS.has(m)?26:28;
+  const y=18;
 
-  // Important: render the combining mark itself only.
-  // Do NOT prepend Arabic tatweel (ـ), because some browsers display it as a visible dash.
-  return `<svg viewBox="0 0 64 34" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet"><text x="32" y="${y}" text-anchor="middle" dominant-baseline="middle" direction="rtl" font-size="${size}" fill="currentColor" style="font-family:${font}">${esc(m)}</text></svg>`;
+  // NBSP is invisible but gives the combining mark a stable glyph box.
+  // Never use Arabic tatweel (ـ) here: some browsers render it visibly.
+  return `<svg viewBox="0 0 64 36" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet"><text x="32" y="${y}" text-anchor="middle" dominant-baseline="middle" direction="rtl" font-size="${size}" fill="currentColor" style="font-family:${font}"> ${esc(m)}</text></svg>`;
 }
 
 export function renderAttachedHaraka(mark,{anchor=50,withShadda=false}={}){
@@ -29,6 +30,10 @@ export function renderAttachedHaraka(mark,{anchor=50,withShadda=false}={}){
   else if(mark==='ِ' && withShadda) cls='foam-mark-overlay mark-kasra-with-shadda';
   else if(withShadda && TOP_MARKS.has(mark)) cls='foam-mark-overlay mark-top mark-with-shadda';
   return `<span class="${cls}" data-haraka="${esc(mark)}" style="--mark-anchor:${Number(anchor)||50}%">${nativeHarakaSvg(mark)}</span>`;
+}
+
+export function renderShaddaKasraStack({anchor=50}={}){
+  return `<span class="foam-mark-overlay mark-stack-shadda-kasra" data-haraka-stack="ِّ" style="--mark-anchor:${Number(anchor)||50}%"><span class="stack-shadda" data-haraka="ّ">${nativeHarakaSvg('ّ')}</span><span class="stack-kasra" data-haraka="ِ">${nativeHarakaSvg('ِ')}</span></span>`;
 }
 
 export function renderFreeHaraka(mark){
