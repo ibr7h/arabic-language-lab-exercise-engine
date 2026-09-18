@@ -33,6 +33,19 @@ for (const a of ['ا','أ','إ','آ']) {
   assert.equal(data.char, a);
 }
 
+const phrasePieces = bm.textToPiecesData('ذَهَبَ مُحَمَّدٌ');
+assert.ok(phrasePieces.some(p => p.type === 'space'), 'completed phrases must preserve explicit spaces as board pieces');
+assert.equal(phrasePieces.filter(p => p.type === 'space').length, 1);
+
+const shaddaKasraPiece = bm.createLetterPiece('م','glyph-red','منفصل',10,10);
+shaddaKasraPiece.marks = ['ّ','ِ'];
+bm.shaddaKasraMode = 'school';
+assert.ok(bm.renderMarkOverlays(shaddaKasraPiece).includes('mark-stack-shadda-kasra'), 'school mode stacks kasra below shadda');
+bm.shaddaKasraMode = 'uthmani';
+const uthmaniMarks = bm.renderMarkOverlays(shaddaKasraPiece);
+assert.ok(!uthmaniMarks.includes('mark-stack-shadda-kasra'), 'uthmani mode does not use the school stack');
+assert.ok(uthmaniMarks.includes('mark-bottom'), 'uthmani mode keeps kasra below the base letter');
+
 const salat = bm.wordToPiecesData('الصَّلَاةَ');
 assert.ok(salat.some(p => p.type === 'ligature' && p.components?.length === 2 && p.components[1].includes('ا')), 'plain alif must remain plain alif inside the lam-alif ligature');
 assert.ok(!salat.some(p => p.glyph.includes('أ')), 'plain alif must not turn into hamza');
