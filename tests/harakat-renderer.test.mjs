@@ -7,7 +7,12 @@ for (const mark of ['َ','ُ','ِ','ْ','ّ','ً','ٌ','ٍ']) {
   assert.ok(svg.includes('<text'));
   assert.ok(!svg.includes('<path'));
   assert.ok(!svg.includes('ـ'), 'haraka renderer must never expose a visible tatweel carrier');
-  assert.ok(svg.includes(mark), 'rendered SVG must contain the requested haraka');
+  if(mark==='ٌ'){
+    assert.equal((svg.match(/ُ/g)||[]).length,2,'dammatan must render as exactly two dammas');
+    assert.ok(!svg.includes('ٌ'),'custom dammatan must not fall back to the platform dammatan glyph');
+  } else {
+    assert.ok(svg.includes(mark), 'rendered SVG must contain the requested haraka');
+  }
   const attached=renderAttachedHaraka(mark);
   const free=renderFreeHaraka(mark);
   assert.ok(attached.includes('foam-mark-overlay'));
