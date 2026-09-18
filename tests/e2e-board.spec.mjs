@@ -49,4 +49,45 @@ test.describe('Arabic Language Lab board E2E', () => {
 
     expect(page.__errors).toEqual([]);
   });
+
+  test('field corrections: editable lam-alif and attached haraka geometry', async ({ page }) => {
+    await page.locator('#exerciseModeFree').click();
+    await page.locator('button[data-onclick="boardManager.clearBoard()"]').click();
+
+    // Direct lam-alif pieces must be available without typing a completed word.
+    await page.locator('button[data-lam-alif="لا"]').click();
+    await expect(page.locator('.piece-type-ligature')).toHaveCount(1);
+    await expect(page.locator('.piece-type-ligature')).toContainText('لا');
+
+    await page.locator('button[data-onclick="boardManager.clearBoard()"]').click();
+
+    // A fatha inside لَا must remain detachable from the ligature.
+    await page.locator('#exerciseModeCompleted').click();
+    await page.locator('#customBoardWord').fill('لَا');
+    await page.locator('button[data-onclick="boardManager.addCustomCompletedWord()"]').click();
+    const markedLigature=page.locator('.piece-type-ligature').last();
+    await expect(markedLigature.locator('.foam-mark-overlay[data-haraka="َ"]')).toHaveCount(1);
+    await markedLigature.click();
+    await page.locator('button[data-onclick="boardManager.detachSelectedHaraka()"]').click();
+    await expect(page.locator('.piece-type-haraka')).toHaveCount(1);
+    await expect(page.locator('.piece-type-ligature').last().locator('.foam-mark-overlay[data-haraka="َ"]')).toHaveCount(0);
+
+    // إِ uses a dedicated kasra anchor instead of drifting left.
+    await page.locator('#exerciseModeFree').click();
+    await page.locator('button[data-onclick="boardManager.clearBoard()"]').click();
+    await page.locator('#quickLetterSelect').selectOption('إ');
+    await page.locator('#letterShapesSpotlight button[title="منفصل"]').click();
+    await page.locator('#harakaModeAttached').click();
+    await page.locator('#harakatButtonsRow button[title="كسرة"]').click();
+    const kasra=page.locator('.piece-type-letter .foam-mark-overlay[data-haraka="ِ"]');
+    await expect(kasra).toHaveAttribute('style', /--mark-anchor:58%/);
+
+    // With shadda, kasra must move into the stacked-above-letter geometry.
+    await page.locator('#harakatButtonsRow button[title="شدة"]').click();
+    await expect(page.locator('.piece-type-letter .mark-kasra-with-shadda[data-haraka="ِ"]')).toHaveCount(1);
+    await expect(page.locator('.piece-type-letter .mark-shadda[data-haraka="ّ"]')).toHaveCount(1);
+
+    expect(page.__errors).toEqual([]);
+  });
+
 });
