@@ -9,6 +9,12 @@ test.describe('Arabic Language Lab board E2E', () => {
     page.__errors=errors;
   });
 
+  test('visible build badge identifies the loaded app version', async ({ page }) => {
+    const badge=page.locator('#appVersionBadge');
+    await expect(badge).toBeVisible();
+    await expect(badge).toHaveText('Version v12.1 • Build 2026-09-18');
+  });
+
   test('lam-alif, free haraka, resize, keyboard movement, phrase spaces', async ({ page }) => {
     // Completed-word shaping must render lam-alif as one visual piece.
     await page.locator('#exerciseModeCompleted').click();
