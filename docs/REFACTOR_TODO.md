@@ -50,3 +50,13 @@ Status legend: ⬜ not started · 🟡 in progress · ✅ verified · 🔴 block
 - ✅ T28 — PWA/cache strategy uses network-first code updates plus Service Worker update/reload flow and automated tests.
 - ✅ T29 — README/ARCHITECTURE/CHANGELOG/VERSION synchronized for Refactor v5.
 - ✅ T30 — Final comparison against baseline completed; baseline remains `6f1b2abcf72e6828df84ffdaa84440059fed75bd` and `main` is ahead with no commits behind.
+
+
+## Field correction pass — 2026-09-18
+
+- 🟡 F01 — `لَا`: keep the fatha editable/detachable from the lam–alif ligature.
+- 🟡 F02 — Keep attached haraka visual size consistent with free haraka size.
+- 🟡 F03 — Stack kasra below shadda above the letter when both occur together.
+- 🟡 F04 — Correct the kasra anchor for `إِ`.
+- 🟡 F05 — Expose `لا، ـلا، لأ، ـلأ، لإ، ـلإ، لآ، ـلآ` directly in the board toolbox.
+- 🟡 F06 — Browser regression verification for all field corrections above.
