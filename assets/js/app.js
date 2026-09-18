@@ -813,6 +813,7 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
         const target = this.getHarakaTarget();
         if (!target) { app.showToast('حددي حرفًا أو وصلة عليها حركة أولًا'); return; }
 
+        this.checkpoint('DETACH_HARAKA');
         let mark = '';
         if (target.type === 'ligature') {
           const attachments = Array.isArray(target.markAttachments) ? [...target.markAttachments] : [];
@@ -829,7 +830,6 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
           target.value = this.composePieceValue(target);
         }
 
-        this.checkpoint('DETACH_HARAKA');
         const piece = createCanonicalHarakaPiece({
           mark,
           label: 'حركة مفصولة',
