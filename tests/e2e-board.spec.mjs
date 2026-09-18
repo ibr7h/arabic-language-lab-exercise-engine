@@ -12,7 +12,40 @@ test.describe('Arabic Language Lab board E2E', () => {
   test('visible build badge identifies the loaded app version', async ({ page }) => {
     const badge=page.locator('#appVersionBadge');
     await expect(badge).toBeVisible();
-    await expect(badge).toHaveText('Version v12.3 • Build 2026-09-18');
+    await expect(badge).toHaveText('Version v12.4 • Build 2026-09-18');
+  });
+
+  test('live haraka calibration updates CSS variables and persists locally', async ({ page }) => {
+    await page.locator('#harakaCalibrationToggle').click();
+    const panel=page.locator('#harakaCalibrationPanel');
+    await expect(panel).toBeVisible();
+
+    await page.locator('#calHarakaSize').evaluate(el => { el.value='130'; el.dispatchEvent(new Event('input',{bubbles:true})); });
+    await page.locator('#calHarakaTopGap').evaluate(el => { el.value='0.22'; el.dispatchEvent(new Event('input',{bubbles:true})); });
+    await page.locator('#calHarakaBottomGap').evaluate(el => { el.value='0.08'; el.dispatchEvent(new Event('input',{bubbles:true})); });
+    await page.locator('#calShaddaKasraGap').evaluate(el => { el.value='8'; el.dispatchEvent(new Event('input',{bubbles:true})); });
+    await page.locator('#calDammatanSize').evaluate(el => { el.value='86'; el.dispatchEvent(new Event('input',{bubbles:true})); });
+    await page.locator('#calDammatanGap').evaluate(el => { el.value='6'; el.dispatchEvent(new Event('input',{bubbles:true})); });
+
+    const vars=await page.evaluate(() => {
+      const s=document.documentElement.style;
+      return {
+        size:s.getPropertyValue('--haraka-attached-scale').trim(),
+        top:s.getPropertyValue('--haraka-top-offset').trim(),
+        bottom:s.getPropertyValue('--haraka-bottom-offset').trim(),
+        stack:s.getPropertyValue('--haraka-stack-kasra-top').trim(),
+        dammatanSize:s.getPropertyValue('--dammatan-scale').trim(),
+        a:s.getPropertyValue('--dammatan-lobe-a-x').trim(),
+        b:s.getPropertyValue('--dammatan-lobe-b-x').trim()
+      };
+    });
+    expect(vars).toEqual({size:'1.3',top:'-0.22em',bottom:'-0.08em',stack:'8%',dammatanSize:'0.86',a:'-3px',b:'3px'});
+    await expect(page.locator('#harakaCalibrationSummary')).toHaveText('size=130 | top=0.22 | bottom=0.08 | shaddaKasra=8 | dammatanSize=86 | dammatanGap=6');
+
+    await page.reload({waitUntil:'networkidle'});
+    await expect(page.locator('#harakaCalibrationSummary')).toHaveText('size=130 | top=0.22 | bottom=0.08 | shaddaKasra=8 | dammatanSize=86 | dammatanGap=6');
+    await page.locator('#harakaCalibrationToggle').click();
+    await page.locator('button[data-onclick="boardManager.resetHarakaCalibration()"]').click();
   });
 
   test('lam-alif, free haraka, resize, keyboard movement, phrase spaces', async ({ page }) => {
