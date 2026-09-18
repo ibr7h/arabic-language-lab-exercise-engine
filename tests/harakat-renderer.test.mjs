@@ -22,6 +22,8 @@ for (const mark of ['َ','ُ','ِ','ْ','ّ','ً','ٌ','ٍ']) {
 }
 
 
+assert.ok(nativeHarakaSvg('َ').includes('var(--arabic-font-family'),'haraka SVG must inherit the app-selected Arabic font');
+
 const dammatan=nativeHarakaSvg('ٌ');
 assert.ok(dammatan.includes('dammatan-double-svg'),'dammatan must use the dedicated two-damma renderer');
 assert.equal((dammatan.match(/class="dammatan-lobe /g)||[]).length,2,'dammatan must contain exactly two damma lobes');
