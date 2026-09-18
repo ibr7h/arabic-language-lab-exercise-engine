@@ -79,19 +79,27 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
     const PRIMARY_HARAKAT = new Set(['َ','ُ','ِ','ْ','ً','ٌ','ٍ']);
     const HARAKA_CALIBRATION_DEFAULTS = Object.freeze({
       size: 100,
+      xOffset: 0,
       topGap: 0.34,
       bottomGap: 0.14,
+      shaddaStackTop: 0.30,
       shaddaKasraGap: 16,
       dammatanSize: 100,
-      dammatanGap: 10
+      dammatanGap: 10,
+      dammatanX: 0,
+      dammatanY: 0
     });
     const HARAKA_CALIBRATION_LIMITS = Object.freeze({
-      size: [60, 160],
-      topGap: [0, 1],
-      bottomGap: [0, 0.8],
-      shaddaKasraGap: [0, 45],
-      dammatanSize: [60, 150],
-      dammatanGap: [2, 24]
+      size: [50, 190],
+      xOffset: [-40, 40],
+      topGap: [0, 1.2],
+      bottomGap: [0, 1],
+      shaddaStackTop: [0, 1],
+      shaddaKasraGap: [0, 60],
+      dammatanSize: [40, 180],
+      dammatanGap: [0, 32],
+      dammatanX: [-35, 35],
+      dammatanY: [-35, 35]
     });
     const boardPlatformAdapter = createPlatformAdapter(detectPlatformProfile());
 
@@ -117,10 +125,15 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
       wordCounter: 0,
       harakaPlacementMode: 'attached',
       harakaCalibrationStorageKey: 'arabic-language-lab.haraka-calibration.v1',
+      harakaDisplayStorageKey: 'arabic-language-lab.haraka-display.v1',
       harakaCalibration: { ...HARAKA_CALIBRATION_DEFAULTS },
+      harakaCalibrationScope: 'global',
+      shaddaKasraMode: 'school',
+      showPieceFrames: true,
 
       init() {
         this.loadHarakaCalibration();
+        this.loadHarakaDisplayPreferences();
         this.populateQuickLetterSelect();
         this.renderHarakat();
         this.renderLamAlifToolbar();
@@ -166,29 +179,119 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
         } catch (_) {}
       },
 
+      loadHarakaDisplayPreferences() {
+        let stored = null;
+        try {
+          stored = typeof localStorage !== 'undefined'
+            ? JSON.parse(localStorage.getItem(this.harakaDisplayStorageKey) || 'null')
+            : null;
+        } catch (_) {
+          stored = null;
+        }
+        this.shaddaKasraMode = stored?.shaddaKasraMode === 'uthmani' ? 'uthmani' : 'school';
+        this.showPieceFrames = stored?.showPieceFrames !== false;
+      },
+
+      saveHarakaDisplayPreferences() {
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(this.harakaDisplayStorageKey, JSON.stringify({
+              shaddaKasraMode: this.shaddaKasraMode,
+              showPieceFrames: this.showPieceFrames
+            }));
+          }
+        } catch (_) {}
+      },
+
+      getCalibrationTargetItem() {
+        const item = this.items.find(entry => entry.id === this.activeItemId);
+        return item && ['letter','ligature'].includes(item.type) ? item : null;
+      },
+
+      getEffectiveHarakaCalibration(item = null) {
+        const override = item?.metadata?.harakaCalibration;
+        return this.normalizeHarakaCalibration({ ...this.harakaCalibration, ...(override || {}) });
+      },
+
+      getCalibrationEditingValues() {
+        if (this.harakaCalibrationScope === 'selected') {
+          const target = this.getCalibrationTargetItem();
+          if (target) return this.getEffectiveHarakaCalibration(target);
+        }
+        return { ...this.harakaCalibration };
+      },
+
+      setCalibrationCssVariables(style, values) {
+        if (!style || !values) return;
+        style.setProperty('--haraka-attached-scale', String(values.size / 100));
+        style.setProperty('--haraka-x-offset', `${values.xOffset}px`);
+        style.setProperty('--haraka-top-offset', `${-Math.abs(values.topGap)}em`);
+        style.setProperty('--haraka-bottom-offset', `${-Math.abs(values.bottomGap)}em`);
+        style.setProperty('--haraka-stack-top-offset', `${-Math.abs(values.shaddaStackTop)}em`);
+        style.setProperty('--haraka-stack-kasra-top', `${values.shaddaKasraGap}%`);
+        style.setProperty('--dammatan-scale', String(values.dammatanSize / 100));
+        style.setProperty('--dammatan-lobe-a-x', `${-(values.dammatanGap / 2)}px`);
+        style.setProperty('--dammatan-lobe-b-x', `${values.dammatanGap / 2}px`);
+        style.setProperty('--dammatan-x-offset', `${values.dammatanX}px`);
+        style.setProperty('--dammatan-y-offset', `${values.dammatanY}px`);
+      },
+
       applyHarakaCalibration() {
         if (typeof document === 'undefined') return;
-        const root = document.documentElement;
-        const v = this.harakaCalibration;
-        root.style.setProperty('--haraka-attached-scale', String(v.size / 100));
-        root.style.setProperty('--haraka-top-offset', `${-Math.abs(v.topGap)}em`);
-        root.style.setProperty('--haraka-bottom-offset', `${-Math.abs(v.bottomGap)}em`);
-        root.style.setProperty('--haraka-stack-kasra-top', `${v.shaddaKasraGap}%`);
-        root.style.setProperty('--dammatan-scale', String(v.dammatanSize / 100));
-        root.style.setProperty('--dammatan-lobe-a-x', `${-(v.dammatanGap / 2)}px`);
-        root.style.setProperty('--dammatan-lobe-b-x', `${v.dammatanGap / 2}px`);
+        this.setCalibrationCssVariables(document.documentElement.style, this.harakaCalibration);
+      },
+
+      applyHarakaCalibrationToElement(el, item) {
+        if (!el || !item) return;
+        this.setCalibrationCssVariables(el.style, this.getEffectiveHarakaCalibration(item));
+      },
+
+      setHarakaCalibrationScope(scope) {
+        this.harakaCalibrationScope = scope === 'selected' ? 'selected' : 'global';
+        this.syncHarakaCalibrationUI();
+      },
+
+      setShaddaKasraMode(mode) {
+        this.shaddaKasraMode = mode === 'uthmani' ? 'uthmani' : 'school';
+        this.saveHarakaDisplayPreferences();
+        this.syncHarakaCalibrationUI();
+        this.renderBoard();
+        app.showToast(this.shaddaKasraMode === 'school'
+          ? 'نمط الشدة والكسرة: تعليمي'
+          : 'نمط الشدة والكسرة: عثماني');
+      },
+
+      togglePieceFrames() {
+        this.showPieceFrames = !this.showPieceFrames;
+        this.saveHarakaDisplayPreferences();
+        this.renderBoard();
+      },
+
+      syncPieceFrameUI() {
+        const btn = document.getElementById('pieceFrameToggleBtn');
+        if (!btn) return;
+        btn.classList.toggle('active', this.showPieceFrames);
+        btn.textContent = this.showPieceFrames ? '▣ إطار القطع: ظاهر' : '□ إطار القطع: مخفي';
       },
 
       syncHarakaCalibrationUI() {
         if (typeof document === 'undefined') return;
-        const v = this.harakaCalibration;
+        const target = this.getCalibrationTargetItem();
+        if (this.harakaCalibrationScope === 'selected' && !target) {
+          this.harakaCalibrationScope = 'global';
+        }
+        const v = this.getCalibrationEditingValues();
         const fields = {
           size: ['calHarakaSize','calHarakaSizeOut'],
+          xOffset: ['calHarakaXOffset','calHarakaXOffsetOut'],
           topGap: ['calHarakaTopGap','calHarakaTopGapOut'],
           bottomGap: ['calHarakaBottomGap','calHarakaBottomGapOut'],
+          shaddaStackTop: ['calShaddaStackTop','calShaddaStackTopOut'],
           shaddaKasraGap: ['calShaddaKasraGap','calShaddaKasraGapOut'],
           dammatanSize: ['calDammatanSize','calDammatanSizeOut'],
-          dammatanGap: ['calDammatanGap','calDammatanGapOut']
+          dammatanGap: ['calDammatanGap','calDammatanGapOut'],
+          dammatanX: ['calDammatanX','calDammatanXOut'],
+          dammatanY: ['calDammatanY','calDammatanYOut']
         };
         for (const [key, ids] of Object.entries(fields)) {
           const input = document.getElementById(ids[0]);
@@ -196,13 +299,24 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
           if (input) input.value = String(v[key]);
           if (output) output.textContent = String(v[key]);
         }
+        const scope = document.getElementById('harakaCalibrationScope');
+        if (scope) scope.value = this.harakaCalibrationScope;
+        const mode = document.getElementById('shaddaKasraMode');
+        if (mode) mode.value = this.shaddaKasraMode;
+        const hint = document.getElementById('harakaCalibrationScopeHint');
+        if (hint) {
+          hint.textContent = this.harakaCalibrationScope === 'selected' && target
+            ? `معايرة خاصة بالقطعة المحددة: ${this.composePieceValue(target)}. لن تتغير القيم العامة.`
+            : 'تعديل القيم الافتراضية العامة.';
+        }
         const summary = document.getElementById('harakaCalibrationSummary');
         if (summary) summary.textContent = this.getHarakaCalibrationSummary();
+        this.syncPieceFrameUI();
       },
 
       getHarakaCalibrationSummary() {
-        const v = this.harakaCalibration;
-        return `size=${v.size} | top=${v.topGap} | bottom=${v.bottomGap} | shaddaKasra=${v.shaddaKasraGap} | dammatanSize=${v.dammatanSize} | dammatanGap=${v.dammatanGap}`;
+        const v = this.getCalibrationEditingValues();
+        return `scope=${this.harakaCalibrationScope} | size=${v.size} | x=${v.xOffset} | top=${v.topGap} | bottom=${v.bottomGap} | stackTop=${v.shaddaStackTop} | shaddaKasra=${v.shaddaKasraGap} | dammatanSize=${v.dammatanSize} | dammatanGap=${v.dammatanGap} | dammatanX=${v.dammatanX} | dammatanY=${v.dammatanY}`;
       },
 
       updateHarakaCalibration(key, rawValue) {
@@ -210,18 +324,48 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
         const n = Number(rawValue);
         if (!Number.isFinite(n)) return;
         const [min, max] = HARAKA_CALIBRATION_LIMITS[key];
-        this.harakaCalibration[key] = Math.max(min, Math.min(max, n));
-        this.applyHarakaCalibration();
+        const value = Math.max(min, Math.min(max, n));
+
+        if (this.harakaCalibrationScope === 'selected') {
+          const target = this.getCalibrationTargetItem();
+          if (!target) {
+            this.harakaCalibrationScope = 'global';
+            app.showToast('حددي حرفًا أو وصلة أولًا للمعايرة الخاصة');
+          } else {
+            target.metadata = target.metadata || {};
+            target.metadata.harakaCalibration = {
+              ...(target.metadata.harakaCalibration || {}),
+              [key]: value
+            };
+          }
+        }
+        if (this.harakaCalibrationScope === 'global') {
+          this.harakaCalibration[key] = value;
+          this.applyHarakaCalibration();
+          this.saveHarakaCalibration();
+        }
+
+        this.renderBoard();
         this.syncHarakaCalibrationUI();
-        this.saveHarakaCalibration();
       },
 
       resetHarakaCalibration() {
+        if (this.harakaCalibrationScope === 'selected') {
+          const target = this.getCalibrationTargetItem();
+          if (target?.metadata?.harakaCalibration) {
+            delete target.metadata.harakaCalibration;
+            this.renderBoard();
+            this.syncHarakaCalibrationUI();
+            app.showToast('تمت إزالة المعايرة الخاصة بالقطعة');
+            return;
+          }
+        }
         this.harakaCalibration = { ...HARAKA_CALIBRATION_DEFAULTS };
         this.applyHarakaCalibration();
-        this.syncHarakaCalibrationUI();
         this.saveHarakaCalibration();
-        app.showToast('تمت إعادة قيم معايرة الحركات');
+        this.renderBoard();
+        this.syncHarakaCalibrationUI();
+        app.showToast('تمت إعادة قيم معايرة الحركات العامة');
       },
 
       toggleHarakaCalibrationPanel() {
