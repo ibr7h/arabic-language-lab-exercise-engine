@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v12-2026-09-18-haraka-carrier-hotfix';
+const CACHE_VERSION = 'arabic-language-lab-exercise-engine-v12.1-2026-09-18-visible-version';
 const CORE = [
   './', './index.html', './manifest.webmanifest', './LICENSE.txt',
   './assets/css/tailwind.css', './assets/css/app.css',
