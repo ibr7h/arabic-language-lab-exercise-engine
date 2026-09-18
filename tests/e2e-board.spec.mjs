@@ -12,40 +12,111 @@ test.describe('Arabic Language Lab board E2E', () => {
   test('visible build badge identifies the loaded app version', async ({ page }) => {
     const badge=page.locator('#appVersionBadge');
     await expect(badge).toBeVisible();
-    await expect(badge).toHaveText('Version v12.4 • Build 2026-09-18');
+    await expect(badge).toHaveText('Version v12.5 • Build 2026-09-18');
   });
 
-  test('live haraka calibration updates CSS variables and persists locally', async ({ page }) => {
+  test('live haraka calibration supports global and selected-piece scopes', async ({ page }) => {
     await page.locator('#harakaCalibrationToggle').click();
     const panel=page.locator('#harakaCalibrationPanel');
     await expect(panel).toBeVisible();
 
     await page.locator('#calHarakaSize').evaluate(el => { el.value='130'; el.dispatchEvent(new Event('input',{bubbles:true})); });
+    await page.locator('#calHarakaXOffset').evaluate(el => { el.value='4'; el.dispatchEvent(new Event('input',{bubbles:true})); });
     await page.locator('#calHarakaTopGap').evaluate(el => { el.value='0.22'; el.dispatchEvent(new Event('input',{bubbles:true})); });
     await page.locator('#calHarakaBottomGap').evaluate(el => { el.value='0.08'; el.dispatchEvent(new Event('input',{bubbles:true})); });
+    await page.locator('#calShaddaStackTop').evaluate(el => { el.value='0.24'; el.dispatchEvent(new Event('input',{bubbles:true})); });
     await page.locator('#calShaddaKasraGap').evaluate(el => { el.value='8'; el.dispatchEvent(new Event('input',{bubbles:true})); });
     await page.locator('#calDammatanSize').evaluate(el => { el.value='86'; el.dispatchEvent(new Event('input',{bubbles:true})); });
     await page.locator('#calDammatanGap').evaluate(el => { el.value='6'; el.dispatchEvent(new Event('input',{bubbles:true})); });
+    await page.locator('#calDammatanX').evaluate(el => { el.value='3'; el.dispatchEvent(new Event('input',{bubbles:true})); });
+    await page.locator('#calDammatanY').evaluate(el => { el.value='-2'; el.dispatchEvent(new Event('input',{bubbles:true})); });
 
     const vars=await page.evaluate(() => {
       const s=document.documentElement.style;
       return {
         size:s.getPropertyValue('--haraka-attached-scale').trim(),
+        x:s.getPropertyValue('--haraka-x-offset').trim(),
         top:s.getPropertyValue('--haraka-top-offset').trim(),
         bottom:s.getPropertyValue('--haraka-bottom-offset').trim(),
+        stackTop:s.getPropertyValue('--haraka-stack-top-offset').trim(),
         stack:s.getPropertyValue('--haraka-stack-kasra-top').trim(),
         dammatanSize:s.getPropertyValue('--dammatan-scale').trim(),
         a:s.getPropertyValue('--dammatan-lobe-a-x').trim(),
-        b:s.getPropertyValue('--dammatan-lobe-b-x').trim()
+        b:s.getPropertyValue('--dammatan-lobe-b-x').trim(),
+        dx:s.getPropertyValue('--dammatan-x-offset').trim(),
+        dy:s.getPropertyValue('--dammatan-y-offset').trim()
       };
     });
-    expect(vars).toEqual({size:'1.3',top:'-0.22em',bottom:'-0.08em',stack:'8%',dammatanSize:'0.86',a:'-3px',b:'3px'});
-    await expect(page.locator('#harakaCalibrationSummary')).toHaveText('size=130 | top=0.22 | bottom=0.08 | shaddaKasra=8 | dammatanSize=86 | dammatanGap=6');
+    expect(vars).toEqual({
+      size:'1.3',x:'4px',top:'-0.22em',bottom:'-0.08em',stackTop:'-0.24em',stack:'8%',
+      dammatanSize:'0.86',a:'-3px',b:'3px',dx:'3px',dy:'-2px'
+    });
+    await expect(page.locator('#harakaCalibrationSummary')).toContainText('scope=global');
+    await expect(page.locator('#harakaCalibrationSummary')).toContainText('x=4');
+
+    // Select one letter and give it a private X offset without changing the global root value.
+    await page.locator('#exerciseModeFree').click();
+    await page.locator('button[data-onclick="boardManager.clearBoard()"]').click();
+    await page.locator('#quickLetterSelect').selectOption('م');
+    await page.locator('#letterShapesSpotlight button[title="منفصل"]').click();
+    const letter=page.locator('.piece-type-letter').first();
+    await letter.click();
+    await page.locator('#harakaCalibrationScope').selectOption('selected');
+    await page.locator('#calHarakaXOffset').evaluate(el => { el.value='17'; el.dispatchEvent(new Event('input',{bubbles:true})); });
+    await expect(letter).toHaveCSS('--haraka-x-offset','17px');
+    const rootX=await page.evaluate(() => document.documentElement.style.getPropertyValue('--haraka-x-offset').trim());
+    expect(rootX).toBe('4px');
 
     await page.reload({waitUntil:'networkidle'});
-    await expect(page.locator('#harakaCalibrationSummary')).toHaveText('size=130 | top=0.22 | bottom=0.08 | shaddaKasra=8 | dammatanSize=86 | dammatanGap=6');
     await page.locator('#harakaCalibrationToggle').click();
-    await page.locator('button[data-onclick="boardManager.resetHarakaCalibration()"]').click();
+    await expect(page.locator('#harakaCalibrationSummary')).toContainText('scope=global');
+  });
+
+  test('visual controls preserve selection, phrase spaces, modes and font propagation', async ({ page }) => {
+    // Piece frame visibility is independent from selection.
+    await page.locator('#exerciseModeFree').click();
+    await page.locator('button[data-onclick="boardManager.clearBoard()"]').click();
+    await page.locator('#harakaModeFree').click();
+    await page.locator('#harakatButtonsRow button[title="فتحة"]').click();
+    const freeHaraka=page.locator('.piece-type-haraka').first();
+    await expect(freeHaraka).toHaveClass(/is-selected/);
+    await page.locator('#pieceFrameToggleBtn').click();
+    await expect(page.locator('#boardCanvas')).toHaveClass(/piece-frames-hidden/);
+    await expect(freeHaraka).toHaveClass(/is-selected/);
+
+    // Completed phrases preserve an explicit visual gap between words.
+    await page.locator('#exerciseModeCompleted').click();
+    await page.locator('button[data-onclick="boardManager.clearBoard()"]').click();
+    await page.locator('#customBoardWord').fill('ذَهَبَ مُحَمَّدٌ');
+    await page.locator('button[data-onclick="boardManager.addCustomCompletedWord()"]').click();
+    const pieces=page.locator('.free-foam-piece');
+    await expect(pieces).toHaveCount(7);
+    const xs=await pieces.evaluateAll(els => els.map(el => Number.parseFloat(el.style.left)).sort((a,b)=>b-a));
+    const gaps=xs.slice(0,-1).map((x,i)=>x-xs[i+1]);
+    const sorted=[...gaps].sort((a,b)=>a-b);
+    const median=sorted[Math.floor(sorted.length/2)];
+    expect(Math.max(...gaps)).toBeGreaterThan(median*1.45);
+    await expect(page.locator('#currentWordPreview')).toContainText('ذَهَبَ مُحَمَّدٌ');
+
+    // School mode stacks kasra below shadda; Uthmani mode puts kasra below the base letter.
+    await page.locator('button[data-onclick="boardManager.clearBoard()"]').click();
+    await page.locator('#customBoardWord').fill('مِّ');
+    await page.locator('button[data-onclick="boardManager.addCustomCompletedWord()"]').click();
+    await expect(page.locator('.mark-stack-shadda-kasra')).toHaveCount(1);
+    await page.locator('#harakaCalibrationToggle').click();
+    await page.locator('#shaddaKasraMode').selectOption('uthmani');
+    await expect(page.locator('.mark-stack-shadda-kasra')).toHaveCount(0);
+    await expect(page.locator('.mark-shadda[data-haraka="ّ"]')).toHaveCount(1);
+    await expect(page.locator('.mark-bottom[data-haraka="ِ"]')).toHaveCount(1);
+
+    // Changing the app font reaches the SVG harakat as well as the letter glyphs.
+    await page.locator('#appFontPicker').selectOption('font-naskh');
+    const rootFont=await page.evaluate(() => document.documentElement.style.getPropertyValue('--arabic-font-family').trim());
+    expect(rootFont.length).toBeGreaterThan(0);
+    const markFont=await page.locator('.foam-mark-overlay text').first().evaluate(el => getComputedStyle(el).fontFamily);
+    expect(markFont.length).toBeGreaterThan(0);
+
+    expect(page.__errors).toEqual([]);
   });
 
   test('lam-alif, free haraka, resize, keyboard movement, phrase spaces', async ({ page }) => {
