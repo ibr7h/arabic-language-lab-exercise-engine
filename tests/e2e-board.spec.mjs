@@ -12,7 +12,7 @@ test.describe('Arabic Language Lab board E2E', () => {
   test('visible build badge identifies the loaded app version', async ({ page }) => {
     const badge=page.locator('#appVersionBadge');
     await expect(badge).toBeVisible();
-    await expect(badge).toHaveText('Version v12.6 • Build 2026-09-18');
+    await expect(badge).toHaveText('Version v12.7 • Build 2026-09-19');
   });
 
   test('live haraka calibration supports global and selected-piece scopes', async ({ page }) => {
@@ -156,6 +156,69 @@ test.describe('Arabic Language Lab board E2E', () => {
     expect(rootFont.length).toBeGreaterThan(0);
     const markFont=await page.locator('.foam-mark-overlay text').first().evaluate(el => getComputedStyle(el).fontFamily);
     expect(markFont.length).toBeGreaterThan(0);
+
+    expect(page.__errors).toEqual([]);
+  });
+
+  test('a selected letter keeps its dropped position inside a completed word', async ({ page }) => {
+    await page.locator('#exerciseModeCompleted').click();
+    await page.locator('button[data-onclick="boardManager.clearBoard()"]').click();
+    await page.locator('#customBoardWord').fill('كتب');
+    await page.locator('button[data-onclick="boardManager.addCustomCompletedWord()"]').click();
+
+    const letters=page.locator('.piece-type-letter');
+    await expect(letters).toHaveCount(3);
+    const target=letters.nth(1);
+
+    // First click selects the word, second click selects this letter only.
+    await target.click();
+    await target.click();
+    await expect(target).toHaveClass(/is-letter-selected/);
+
+    const targetId=await target.getAttribute('data-piece-id');
+    const beforeTarget=await target.evaluate(el => ({
+      left:Number.parseFloat(el.style.left),
+      top:Number.parseFloat(el.style.top)
+    }));
+    const beforeSiblings=await letters.evaluateAll((els,targetId) =>
+      els.filter(el => el.dataset.pieceId !== targetId).map(el => ({
+        id:el.dataset.pieceId,
+        left:Number.parseFloat(el.style.left),
+        top:Number.parseFloat(el.style.top)
+      })), targetId);
+
+    const box=await target.boundingBox();
+    expect(box).not.toBeNull();
+    await page.mouse.move(box.x+box.width/2, box.y+box.height/2);
+    await page.mouse.down();
+    await page.mouse.move(box.x+box.width/2+48, box.y+box.height/2+28, {steps:6});
+    await page.mouse.up();
+
+    const afterTarget=await page.locator(`[data-piece-id="${targetId}"]`).evaluate(el => ({
+      left:Number.parseFloat(el.style.left),
+      top:Number.parseFloat(el.style.top)
+    }));
+    expect(afterTarget.left).toBeGreaterThan(beforeTarget.left+30);
+    expect(afterTarget.top).toBeGreaterThan(beforeTarget.top+15);
+
+    const afterSiblings=await page.locator('.piece-type-letter').evaluateAll((els,targetId) =>
+      els.filter(el => el.dataset.pieceId !== targetId).map(el => ({
+        id:el.dataset.pieceId,
+        left:Number.parseFloat(el.style.left),
+        top:Number.parseFloat(el.style.top)
+      })), targetId);
+    expect(afterSiblings).toEqual(beforeSiblings);
+
+    // Drop coordinates must survive a full reload/PWA-style restore.
+    await page.reload({waitUntil:'networkidle'});
+    const restored=page.locator(`[data-piece-id="${targetId}"]`);
+    await expect(restored).toBeVisible();
+    const restoredPos=await restored.evaluate(el => ({
+      left:Number.parseFloat(el.style.left),
+      top:Number.parseFloat(el.style.top)
+    }));
+    expect(Math.abs(restoredPos.left-afterTarget.left)).toBeLessThan(1);
+    expect(Math.abs(restoredPos.top-afterTarget.top)).toBeLessThan(1);
 
     expect(page.__errors).toEqual([]);
   });
