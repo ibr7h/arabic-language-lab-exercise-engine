@@ -20,7 +20,7 @@ export function nativeHarakaSvg(mark){
   // this mark to the platform font: Safari/Chrome can choose very different
   // glyphs and spacing for the Unicode dammatan character.
   if(m==='ٌ'){
-    return `<svg class="dammatan-double-svg" viewBox="0 0 64 36" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet"><text class="dammatan-lobe dammatan-lobe-a" x="27" y="18" text-anchor="middle" dominant-baseline="middle" direction="rtl" font-size="66" fill="currentColor" style="font-family:${font}"> ُ</text><text class="dammatan-lobe dammatan-lobe-b" x="37" y="18" text-anchor="middle" dominant-baseline="middle" direction="rtl" font-size="66" fill="currentColor" style="font-family:${font}"> ُ</text></svg>`;
+    return `<svg class="dammatan-double-svg" viewBox="0 0 64 36" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet"><text class="dammatan-lobe dammatan-lobe-a" x="32" y="18" text-anchor="middle" dominant-baseline="middle" direction="rtl" font-size="66" fill="currentColor" style="font-family:${font}"> ُ</text><text class="dammatan-lobe dammatan-lobe-b" x="32" y="18" text-anchor="middle" dominant-baseline="middle" direction="rtl" font-size="66" fill="currentColor" style="font-family:${font}"> ُ</text></svg>`;
   }
 
   const size=m==='ّ'?66:68;
