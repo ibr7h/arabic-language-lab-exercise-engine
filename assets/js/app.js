@@ -7,7 +7,7 @@ import { detectPlatformProfile } from './core/platform-profile.js';
 import { createPlatformAdapter } from './core/platform-adapter.js';
 import { BOARD_CAPABILITIES, pieceCan, createHarakaPiece as createCanonicalHarakaPiece, createSpacePiece as createCanonicalSpacePiece, createLigaturePiece as createCanonicalLigaturePiece, fromLegacyLetterPiece } from './core/board-piece.js';
 import { ArabicIdentity } from './core/arabic-identity.js';
-import { createLamAlifLigature, mergeLamAlifUnits } from './core/ligature-engine.js';
+import { createLamAlifLigature, mergeLamAlifUnits, composeLigatureText } from './core/ligature-engine.js';
 import { renderAttachedHaraka, renderFreeHaraka } from './core/harakat-renderer.js';
 import { BoardState, saveBoardState, loadBoardState } from './core/board-state.js';
 import { BoardHistory } from './core/board-history.js';
@@ -66,6 +66,12 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
       { mark: 'ـٌ', name: 'تنوين ضم', sym: 'ٌ' },
       { mark: 'ـٍ', name: 'تنوين كسر', sym: 'ٍ' }
     ];
+    const LAM_ALIF_TOOLBOX = [
+      { alif: 'ا', plain: 'لا', connected: 'ـلا', name: 'لام ألف' },
+      { alif: 'أ', plain: 'لأ', connected: 'ـلأ', name: 'لام ألف بهمزة فوق' },
+      { alif: 'إ', plain: 'لإ', connected: 'ـلإ', name: 'لام ألف بهمزة تحت' },
+      { alif: 'آ', plain: 'لآ', connected: 'ـلآ', name: 'لام ألف ممدودة' }
+    ];
 
     const LETTER_ORDER_ALPHABETIC = ['ا','ب','ت','ث','ج','ح','خ','د','ذ','ر','ز','س','ش','ص','ض','ط','ظ','ع','غ','ف','ق','ك','ل','م','ن','ه','و','ي'];
     // ترتيب تدريس الحروف في كتاب لغتي للصف الأول: الوحدات 1–5.
@@ -98,6 +104,7 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
       init() {
         this.populateQuickLetterSelect();
         this.renderHarakat();
+        this.renderLamAlifToolbar();
         this.renderLetterShapesSpotlight();
         this.renderAlifVariantsBar();
         this.renderFoamLettersGrid();
@@ -266,6 +273,16 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
           </button>`).join('');
       },
 
+      renderLamAlifToolbar() {
+        const row = document.getElementById('lamAlifButtonsRow');
+        if (!row) return;
+        row.innerHTML = LAM_ALIF_TOOLBOX.map(item => `
+          <div class="lam-alif-tool-pair" aria-label="${item.name}">
+            <button type="button" class="lam-alif-tool-btn" data-lam-alif="${item.plain}" data-onclick="boardManager.addLamAlifPiece('${item.alif}', false)" title="${item.name} منفصلة">${item.plain}</button>
+            <button type="button" class="lam-alif-tool-btn connected" data-lam-alif="${item.connected}" data-onclick="boardManager.addLamAlifPiece('${item.alif}', true)" title="${item.name} متصلة بما قبلها">${item.connected}</button>
+          </div>`).join('');
+      },
+
       renderFoamLettersGrid() {
         const grid = document.getElementById('foamLettersGrid');
         if (!grid) return;
@@ -316,7 +333,14 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
       },
 
       composePieceValue(item) {
-        if (!item || item.type !== 'letter') return item?.value || '';
+        if (!item) return '';
+        if (item.type === 'ligature') {
+          const components = Array.isArray(item.components) && item.components.length >= 2
+            ? item.components.map(value => ArabicText.base(value) || value)
+            : Array.from(item.baseText || item.logicalText || 'لا').filter(ch => ArabicText.LETTER_RE.test(ch)).slice(0, 2);
+          return composeLigatureText(components, item.markAttachments || []);
+        }
+        if (item.type !== 'letter') return item.value || '';
         const marks = item.marks || [];
         if (!marks.length) return item.baseGlyph || item.value || '';
         const chars = Array.from(item.baseGlyph || item.value || '');
@@ -335,19 +359,36 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
         return 'قطعة سبورة';
       },
 
-      getMarkAnchor(item) {
+      getMarkAnchor(item, mark = '', componentIndex = 0) {
+        if (item?.type === 'ligature') {
+          return componentIndex === 0 ? 68 : 34;
+        }
+        const base = item?.logicalChar || ArabicText.base(item?.baseGlyph || item?.value || '');
+        if (mark === 'ِ' && base === 'إ') return 58;
         const name = item?.posName || '';
         if (name.includes('أول')) return 66;
         if (name.includes('آخر')) return 36;
         return 50;
       },
 
+      getMarkAttachments(item) {
+        if (!item) return [];
+        if (item.type === 'ligature') {
+          return Array.isArray(item.markAttachments)
+            ? item.markAttachments.map(entry => ({ mark: entry.mark, componentIndex: Number(entry.componentIndex) || 0 }))
+            : [];
+        }
+        return (item.marks || []).map(mark => ({ mark, componentIndex: 0 }));
+      },
+
       renderMarkOverlays(item) {
-        const marks = item.marks || [];
-        if (!marks.length) return '';
-        const anchor = this.getMarkAnchor(item);
-        const hasShadda = marks.includes('ّ');
-        return marks.map(mark => renderAttachedHaraka(mark, { anchor, withShadda: hasShadda })).join('');
+        const attachments = this.getMarkAttachments(item);
+        if (!attachments.length) return '';
+        return attachments.map(entry => {
+          const hasShadda = attachments.some(other => other.componentIndex === entry.componentIndex && other.mark === 'ّ');
+          const anchor = this.getMarkAnchor(item, entry.mark, entry.componentIndex);
+          return renderAttachedHaraka(entry.mark, { anchor, withShadda: hasShadda });
+        }).join('');
       },
 
       composeGlyphWithMarks(glyph, marks = []) {
@@ -384,8 +425,10 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
       createLigaturePiece(data, x, y, extras = {}) {
         const canonical = createCanonicalLigaturePiece({
           logicalText: data.logicalText,
+          baseText: data.baseText || (data.components || []).map(value => ArabicText.base(value) || value).join(''),
           components: data.components,
-          displayGlyph: data.glyph || data.displayGlyph || data.logicalText,
+          markAttachments: data.markAttachments || [],
+          displayGlyph: data.glyph || data.displayGlyph || data.baseText || data.logicalText,
           x, y,
           scale: Number.isFinite(extras.scale) ? extras.scale : 1,
           metadata: { positionName: data.name || 'وصلة لام ألف' }
@@ -394,7 +437,9 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
           ...canonical,
           id: extras.id || canonical.id,
           value: canonical.logicalText,
+          baseText: canonical.baseText,
           baseGlyph: canonical.displayGlyph,
+          markAttachments: canonical.markAttachments,
           color: data.color || 'glyph-red',
           posName: data.name || 'وصلة لام ألف',
           wordId: extras.wordId || null,
@@ -661,12 +706,12 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
       },
 
       getHarakaTarget() {
-        let item = this.items.find(i => i.id === this.activeItemId && i.type === 'letter');
+        let item = this.items.find(i => i.id === this.activeItemId && ['letter','ligature'].includes(i.type));
         if (!item) {
-          const selectedLetter = [...this.items].reverse().find(i => this.selectedIds.has(i.id) && i.type === 'letter');
-          if (selectedLetter) item = selectedLetter;
+          const selectedTarget = [...this.items].reverse().find(i => this.selectedIds.has(i.id) && ['letter','ligature'].includes(i.type));
+          if (selectedTarget) item = selectedTarget;
         }
-        if (!item) item = [...this.items].reverse().find(i => i.type === 'letter');
+        if (!item) item = [...this.items].reverse().find(i => ['letter','ligature'].includes(i.type));
         return item || null;
       },
 
@@ -697,6 +742,31 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
         app.showToast(`أضيفت ${name} كقطعة حرة`);
       },
 
+      attachMarkToTarget(target, mark, componentIndex = 0) {
+        if (!target) return;
+        if (target.type === 'ligature') {
+          target.markAttachments = Array.isArray(target.markAttachments) ? [...target.markAttachments] : [];
+          if (mark === 'ّ') {
+            const exists = target.markAttachments.some(entry => entry.componentIndex === componentIndex && entry.mark === 'ّ');
+            if (!exists) target.markAttachments.push({ mark, componentIndex });
+          } else {
+            target.markAttachments = target.markAttachments.filter(entry => entry.componentIndex !== componentIndex || !PRIMARY_HARAKAT.has(entry.mark));
+            target.markAttachments.push({ mark, componentIndex });
+          }
+          target.logicalText = this.composePieceValue(target);
+          target.value = target.logicalText;
+          return;
+        }
+        target.marks = Array.isArray(target.marks) ? [...target.marks] : [];
+        if (mark === 'ّ') {
+          if (!target.marks.includes('ّ')) target.marks.push('ّ');
+        } else {
+          target.marks = target.marks.filter(value => !PRIMARY_HARAKAT.has(value));
+          target.marks.push(mark);
+        }
+        target.value = this.composePieceValue(target);
+      },
+
       addHaraka(sym, name) {
         SoundEngine.playSnap();
         SoundEngine.speakArabic(name);
@@ -706,20 +776,17 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
         }
         const target = this.getHarakaTarget();
         if (!target) {
-          app.showToast('اختاري حرفًا أولًا أو فعّلي «حركة حرة»');
+          app.showToast('اختاري حرفًا أو وصلة لام–ألف أولًا، أو فعّلي «حركة حرة»');
           return;
         }
         this.checkpoint('SET_HARAKA');
-        target.marks = Array.isArray(target.marks) ? [...target.marks] : [];
-        if (sym === 'ّ') {
-          if (target.marks.includes('ّ')) target.marks = target.marks.filter(m => m !== 'ّ');
-          else target.marks.push('ّ');
+        if (sym === 'ّ' && target.type === 'letter' && target.marks?.includes('ّ')) {
+          target.marks = target.marks.filter(mark => mark !== 'ّ');
+          target.value = this.composePieceValue(target);
         } else {
-          target.marks = target.marks.filter(m => !PRIMARY_HARAKAT.has(m));
-          target.marks.push(sym);
+          this.attachMarkToTarget(target, sym, 0);
         }
-        target.value = this.composePieceValue(target);
-        this.setSelection([target.id], 'letter', target.id);
+        this.setSelection([target.id], target.type === 'ligature' ? 'ligature' : 'letter', target.id);
         this.renderBoard();
         app.showToast(`تم ضبط الحركة إلى: ${name}`);
       },
@@ -727,36 +794,49 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
       attachSelectedHaraka() {
         const markPiece = this.items.find(i => this.selectedIds.has(i.id) && i.type === 'haraka');
         if (!markPiece) { app.showToast('حددي حركة حرة أولًا'); return; }
-        const letters = this.items.filter(i => i.type === 'letter');
-        if (!letters.length) { app.showToast('لا يوجد حرف لربط الحركة به'); return; }
+        const targets = this.items.filter(i => ['letter','ligature'].includes(i.type));
+        if (!targets.length) { app.showToast('لا يوجد حرف أو وصلة لام–ألف لربط الحركة بها'); return; }
         this.checkpoint('ATTACH_HARAKA');
-        let target = letters[0], best = Infinity;
-        for (const letter of letters) {
-          const d = Math.hypot((letter.x||0)-(markPiece.x||0), (letter.y||0)-(markPiece.y||0));
-          if (d < best) { best = d; target = letter; }
+        let target = targets[0], best = Infinity;
+        for (const candidate of targets) {
+          const d = Math.hypot((candidate.x||0)-(markPiece.x||0), (candidate.y||0)-(markPiece.y||0));
+          if (d < best) { best = d; target = candidate; }
         }
-        target.marks = Array.isArray(target.marks) ? [...target.marks] : [];
-        if (markPiece.mark === 'ّ') {
-          if (!target.marks.includes('ّ')) target.marks.push('ّ');
-        } else {
-          target.marks = target.marks.filter(m => !PRIMARY_HARAKAT.has(m));
-          target.marks.push(markPiece.mark);
-        }
-        target.value = this.composePieceValue(target);
+        this.attachMarkToTarget(target, markPiece.mark, 0);
         this.items = this.items.filter(i => i.id !== markPiece.id);
-        this.setSelection([target.id], 'letter', target.id);
+        this.setSelection([target.id], target.type === 'ligature' ? 'ligature' : 'letter', target.id);
         this.renderBoard();
-        app.showToast('تم ربط الحركة بأقرب حرف');
+        app.showToast('تم ربط الحركة بأقرب حرف أو وصلة');
       },
 
       detachSelectedHaraka() {
         const target = this.getHarakaTarget();
-        if (!target || !target.marks?.length) { app.showToast('حددي حرفًا عليه حركة أولًا'); return; }
+        if (!target) { app.showToast('حددي حرفًا أو وصلة عليها حركة أولًا'); return; }
+
+        let mark = '';
+        if (target.type === 'ligature') {
+          const attachments = Array.isArray(target.markAttachments) ? [...target.markAttachments] : [];
+          if (!attachments.length) { app.showToast('الوصلة المحددة لا تحتوي حركة قابلة للفصل'); return; }
+          const detached = attachments.pop();
+          mark = detached.mark;
+          target.markAttachments = attachments;
+          target.logicalText = this.composePieceValue(target);
+          target.value = target.logicalText;
+        } else {
+          if (!target.marks?.length) { app.showToast('الحرف المحدد لا يحتوي حركة قابلة للفصل'); return; }
+          mark = target.marks[target.marks.length - 1];
+          target.marks = target.marks.slice(0, -1);
+          target.value = this.composePieceValue(target);
+        }
+
         this.checkpoint('DETACH_HARAKA');
-        const mark = target.marks[target.marks.length - 1];
-        target.marks = target.marks.slice(0, -1);
-        target.value = this.composePieceValue(target);
-        const piece = createCanonicalHarakaPiece({ mark, label: 'حركة مفصولة', x: (target.x||0)+34, y: Math.max(12,(target.y||0)-34), scale: Number(target.scale)||1 });
+        const piece = createCanonicalHarakaPiece({
+          mark,
+          label: 'حركة مفصولة',
+          x: (target.x||0)+34,
+          y: Math.max(12,(target.y||0)-34),
+          scale: Number(target.scale)||1
+        });
         piece.value = mark; piece.color = 'glyph-haraka'; piece.posName = 'حركة حرة';
         this.items.push(piece);
         this.setSelection([piece.id], 'haraka', piece.id);
@@ -768,11 +848,41 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
         const target = this.getHarakaTarget();
         if (!target) return;
         this.checkpoint('CLEAR_HARAKA');
-        target.marks = [];
-        target.value = this.composePieceValue(target);
+        if (target.type === 'ligature') {
+          target.markAttachments = [];
+          target.logicalText = this.composePieceValue(target);
+          target.value = target.logicalText;
+        } else {
+          target.marks = [];
+          target.value = this.composePieceValue(target);
+        }
         SoundEngine.playSnap();
         this.renderBoard();
-        app.showToast('تمت إزالة الحركة من الحرف المحدد');
+        app.showToast('تمت إزالة الحركة من القطعة المحددة');
+      },
+
+      addLamAlifPiece(alifVariant = 'ا', connected = false) {
+        const alif = ['ا','أ','إ','آ'].includes(alifVariant) ? alifVariant : 'ا';
+        const data = createLamAlifLigature('ل', alif, ArabicText, { connectPrev: Boolean(connected) });
+        if (!data) return;
+        const canvas = document.getElementById('boardCanvas');
+        const rect = canvas ? canvas.getBoundingClientRect() : { width: 400, height: 320 };
+        const count = this.items.filter(item => item.type === 'ligature').length;
+        const x = Math.max(24, rect.width * .68 - ((count * 74) % Math.max(140, rect.width * .5)));
+        const y = Math.max(32, rect.height * .40 + ((count * 24) % 80));
+        this.checkpoint('ADD_LAM_ALIF');
+        const piece = this.createLigaturePiece({
+          ...data,
+          glyph: data.displayGlyph,
+          color: connected ? 'glyph-blue' : 'glyph-red',
+          name: connected ? 'لام–ألف متصلة بما قبلها' : 'لام–ألف منفصلة'
+        }, x, y);
+        this.items.push(piece);
+        this.setSelection([piece.id], 'ligature', piece.id);
+        this.renderBoard();
+        SoundEngine.playSnap();
+        SoundEngine.speakArabic(data.logicalText);
+        app.showToast(`أضيفت ${data.displayGlyph} كوصلة قابلة للتحرير`);
       },
 
       addSpace() {
@@ -860,7 +970,7 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
             const prevBase=sourceIndex>0?ArabicText.base(units[sourceIndex-1]):'';
             const lig=createLamAlifLigature(token.components[0],token.components[1],ArabicText,{connectPrev:Boolean(prevBase)&&this.canConnectToNext(prevBase)})||token;
             sourceIndex+=2;
-            return {type:'ligature',glyph:lig.displayGlyph,logicalText:lig.logicalText,components:lig.components,color:prevBase?'glyph-blue':'glyph-red',name:'وصلة لام–ألف'};
+            return {type:'ligature',glyph:lig.displayGlyph,baseText:lig.baseText,logicalText:lig.logicalText,components:lig.components,markAttachments:lig.markAttachments,color:prevBase?'glyph-blue':'glyph-red',name:'وصلة لام–ألف'};
           }
           const unit=token.unit, base=ArabicText.base(unit);
           const prevBase=sourceIndex>0?ArabicText.base(units[sourceIndex-1]):'';
@@ -1041,7 +1151,9 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
         const label = document.getElementById('harakaTargetLabel');
         if (label) {
           if (this.harakaPlacementMode === 'free') label.textContent = target?.type === 'haraka' ? 'الحركة الحرة محددة ويمكن سحبها وتكبيرها' : 'الحركة ستُضاف كقطعة حرة قابلة للسحب والتكبير';
-          else label.textContent = target?.type === 'letter' ? `الحرف النشط: ${this.composePieceValue(target)}` : 'اختاري حرفًا لتغيير حركته';
+          else if (target?.type === 'letter') label.textContent = `الحرف النشط: ${this.composePieceValue(target)}`;
+          else if (target?.type === 'ligature') label.textContent = `وصلة لام–ألف نشطة: ${this.composePieceValue(target)}`;
+          else label.textContent = 'اختاري حرفًا أو وصلة لام–ألف لتغيير حركتها';
         }
         const scaleOut = document.getElementById('boardLetterScaleValue');
         if (scaleOut) {
@@ -1074,7 +1186,7 @@ import { decorateBoardPieceElement } from './ui/board-piece-view.js';
           const isSelected = this.selectedIds.has(item.id);
           let pieceHtml = '';
           if (item.type === 'haraka') pieceHtml = `<span class="foam-piece-glyph free-haraka-piece-glyph pointer-events-none">${renderFreeHaraka(item.mark)}</span>`;
-          else if (item.type === 'ligature') pieceHtml = `<span class="foam-piece-glyph lam-alif-ligature pointer-events-none" dir="rtl">${item.displayGlyph || item.baseGlyph || item.logicalText}</span>`;
+          else if (item.type === 'ligature') pieceHtml = `<span class="foam-piece-glyph lam-alif-ligature pointer-events-none" dir="rtl">${item.displayGlyph || item.baseGlyph || item.baseText || 'لا'}${this.renderMarkOverlays(item)}</span>`;
           else {
             const base = item.baseGlyph || this.splitGlyph(item.value).baseGlyph;
             pieceHtml = `<span class="foam-piece-glyph pointer-events-none">${base}${this.renderMarkOverlays(item)}</span>`;
