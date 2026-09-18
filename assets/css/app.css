@@ -762,17 +762,22 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
    Values below can be tuned live from the calibration panel.
    ================================================================ */
 :root {
+  --arabic-font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Arabic', 'Geeza Pro', Arial, sans-serif;
   --haraka-attached-scale: 1;
+  --haraka-x-offset: 0px;
   --haraka-top-offset: -.34em;
   --haraka-bottom-offset: -.14em;
+  --haraka-stack-top-offset: -.30em;
   --haraka-stack-kasra-top: 16%;
   --dammatan-scale: 1;
   --dammatan-lobe-a-x: -5px;
   --dammatan-lobe-b-x: 5px;
+  --dammatan-x-offset: 0px;
+  --dammatan-y-offset: 0px;
 }
 .foam-mark-overlay {
   position:absolute;
-  left:var(--mark-anchor, 50%);
+  left:calc(var(--mark-anchor, 50%) + var(--haraka-x-offset, 0px));
   transform:translateX(-50%) scale(var(--haraka-attached-scale, 1));
   transform-origin:center center;
   width:1.34em !important;
@@ -792,6 +797,13 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
   display:block;
   overflow:visible !important;
 }
+.foam-glyph,
+.foam-piece-glyph,
+.lam-alif-ligature,
+.foam-mark-overlay text,
+.free-haraka-native text {
+  font-family:var(--arabic-font-family) !important;
+}
 .foam-mark-overlay.mark-top { top:var(--haraka-top-offset, -.34em) !important; }
 .foam-mark-overlay.mark-shadda {
   top:var(--haraka-top-offset, -.34em) !important;
@@ -809,7 +821,7 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
 .foam-mark-overlay.mark-bottom { bottom:var(--haraka-bottom-offset, -.14em) !important; }
 
 .foam-mark-overlay.mark-stack-shadda-kasra {
-  top:var(--haraka-top-offset, -.34em) !important;
+  top:var(--haraka-stack-top-offset, -.30em) !important;
   bottom:auto !important;
   width:1.22em !important;
   height:.54em !important;
@@ -837,7 +849,7 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
   overflow:visible !important;
 }
 .dammatan-double-svg {
-  transform:scale(var(--dammatan-scale, 1));
+  transform:translate(var(--dammatan-x-offset, 0px), var(--dammatan-y-offset, 0px)) scale(var(--dammatan-scale, 1));
   transform-origin:center center;
 }
 .dammatan-lobe-a { transform:translateX(var(--dammatan-lobe-a-x, -5px)); }
@@ -850,6 +862,16 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
   color:#e11d48;
   background:rgba(255,241,242,.88);
   border:1px solid rgba(244,63,94,.24);
+}
+#boardCanvas.piece-frames-hidden .free-foam-piece.piece-type-haraka:not(.is-selected) {
+  background:transparent !important;
+  border-color:transparent !important;
+}
+#boardCanvas.piece-frames-hidden .free-foam-piece:not(.is-selected) .piece-delete-btn {
+  display:none !important;
+}
+#boardCanvas .free-foam-piece.is-selected {
+  outline-style:solid;
 }
 .free-haraka-piece-glyph {
   width:1em;
@@ -896,6 +918,40 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
   background:#fff;
 }
 .haraka-calibration-panel.hidden { display:none; }
+.haraka-calibration-head {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.5rem;
+  margin-bottom:.45rem;
+}
+.haraka-calibration-head label {
+  display:flex;
+  flex-direction:column;
+  gap:.2rem;
+  font-size:.62rem;
+  font-weight:900;
+  color:#881337;
+}
+.haraka-calibration-head select {
+  width:100%;
+  border:1px solid #fbcfe8;
+  border-radius:.55rem;
+  background:#fff7f8;
+  padding:.3rem .4rem;
+  color:#881337;
+  font-size:.65rem;
+  font-weight:800;
+}
+.haraka-calibration-scope-hint {
+  margin-bottom:.5rem;
+  padding:.3rem .45rem;
+  border-radius:.55rem;
+  background:#f8fafc;
+  border:1px dashed #cbd5e1;
+  color:#475569;
+  font-size:.6rem;
+  font-weight:800;
+}
 .haraka-calibration-grid {
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -960,6 +1016,7 @@ body[data-platform="android"] .exercise-mode-btn { min-height:42px; }
   font-weight:700;
 }
 @media (max-width:640px) {
+  .haraka-calibration-head { grid-template-columns:1fr; }
   .haraka-calibration-grid { grid-template-columns:1fr; }
   .haraka-calibration-control { grid-template-columns:minmax(0,1fr) minmax(100px,1.2fr) 46px; }
 }
